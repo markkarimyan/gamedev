@@ -17,6 +17,7 @@ Player 1:
 - `W`: jump
 - Press `W` again in air: double jump
 - `F`: shoot
+- `G`: ultimate
 
 Player 2:
 
@@ -24,6 +25,7 @@ Player 2:
 - `Up`: jump
 - Press `Up` again in air: double jump
 - `Right Ctrl` or `Numpad 0`: shoot
+- `Right Shift`: ultimate
 
 Match controls:
 
@@ -43,6 +45,7 @@ Match controls:
 - Russian-inspired heavier rifle for Player 2
 - Arena pickups for weapon swaps, rapid fire, medkits, and jump boost
 - Health bars
+- Ultimate charge meters and ready prompts
 - Damage and knockback
 - Round winner detection
 - Score tracking

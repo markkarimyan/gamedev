@@ -1,6 +1,7 @@
 extends Node2D
 
 const TARGET_SCORE := 3
+const ULTIMATE_CHARGE_PER_SECOND := 4.0
 
 var score_1 := 0
 var score_2 := 0
@@ -16,9 +17,18 @@ var round_active := true
 func _ready() -> void:
 	player_1.health_changed.connect(_on_player_health_changed)
 	player_2.health_changed.connect(_on_player_health_changed)
+	player_1.ultimate_charge_changed.connect(_on_player_ultimate_charge_changed)
+	player_2.ultimate_charge_changed.connect(_on_player_ultimate_charge_changed)
 	player_1.defeated.connect(_on_player_defeated)
 	player_2.defeated.connect(_on_player_defeated)
 	_start_round()
+
+
+func _process(delta: float) -> void:
+	if not round_active:
+		return
+	player_1.add_ultimate_charge(ULTIMATE_CHARGE_PER_SECOND * delta)
+	player_2.add_ultimate_charge(ULTIMATE_CHARGE_PER_SECOND * delta)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -27,6 +37,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().reload_current_scene()
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+		elif event.keycode == KEY_G and round_active:
+			player_1.try_activate_ultimate()
+		elif event.keycode == KEY_SHIFT and round_active:
+			player_2.try_activate_ultimate()
 
 
 func _start_round() -> void:
@@ -40,6 +54,29 @@ func _start_round() -> void:
 
 func _on_player_health_changed(player_id: int, health: int, max_health: int) -> void:
 	hud.set_health(player_id, health, max_health)
+
+
+func _on_player_ultimate_charge_changed(player_id: int, charge: float, max_charge: float, is_ready: bool) -> void:
+	hud.set_ultimate_charge(player_id, charge, max_charge, is_ready)
+
+
+func apply_player_hit(attacker_id: int, defender_id: int, damage: int, source_position: Vector2) -> bool:
+	var attacker := _player_for_id(attacker_id)
+	var defender := _player_for_id(defender_id)
+	if defender == null or attacker == null or attacker == defender:
+		return false
+	var hit_applied := defender.take_hit(damage, source_position)
+	if hit_applied:
+		attacker.add_ultimate_charge_for_damage_dealt(damage)
+	return hit_applied
+
+
+func _player_for_id(player_id: int) -> Player:
+	if player_id == 1:
+		return player_1
+	if player_id == 2:
+		return player_2
+	return null
 
 
 func _on_player_defeated(loser_id: int) -> void:

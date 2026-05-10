@@ -33,7 +33,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if body.get("player_id") == owner_id:
+	var target_player_id = body.get("player_id")
+	if target_player_id == owner_id:
+		return
+	if target_player_id != null and get_parent().has_method("apply_player_hit"):
+		get_parent().apply_player_hit(owner_id, target_player_id, damage, global_position)
+		queue_free()
 		return
 	if body.has_method("take_hit"):
 		body.take_hit(damage, global_position)

@@ -3,8 +3,13 @@ class_name Player
 
 signal health_changed(player_id: int, health: int, max_health: int)
 signal defeated(player_id: int)
+signal ultimate_charge_changed(player_id: int, charge: float, max_charge: float, is_ready: bool)
+signal ultimate_activated(player_id: int)
 
 const MAX_HEALTH := 100
+const MAX_ULTIMATE_CHARGE := 100.0
+const ULTIMATE_CHARGE_PER_DAMAGE_DEALT := 1.0
+const ULTIMATE_CHARGE_PER_DAMAGE_TAKEN := 0.7
 const SPEED := 230.0
 const JUMP_VELOCITY := -430.0
 const GRAVITY := 1200.0
@@ -19,6 +24,8 @@ const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 @export var start_facing := 1
 
 var health := MAX_HEALTH
+var ultimate_charge := 0.0
+var ultimate_ready := false
 var facing := 1
 var controls_enabled := true
 var max_jumps := 2
@@ -103,13 +110,45 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	full_sprite.frame = 0
 	previous_shoot_pressed = false
 	health_changed.emit(player_id, health, MAX_HEALTH)
+	reset_ultimate_charge()
 
 
-func take_hit(damage: int, source_position: Vector2) -> void:
-	if invulnerable_left > 0.0 or health <= 0:
+func reset_ultimate_charge() -> void:
+	ultimate_charge = 0.0
+	ultimate_ready = false
+	ultimate_charge_changed.emit(player_id, ultimate_charge, MAX_ULTIMATE_CHARGE, ultimate_ready)
+
+
+func add_ultimate_charge(amount: float) -> void:
+	if amount <= 0.0 or ultimate_ready:
 		return
+	ultimate_charge = minf(ultimate_charge + amount, MAX_ULTIMATE_CHARGE)
+	ultimate_ready = ultimate_charge >= MAX_ULTIMATE_CHARGE
+	ultimate_charge_changed.emit(player_id, ultimate_charge, MAX_ULTIMATE_CHARGE, ultimate_ready)
+
+
+func try_activate_ultimate() -> bool:
+	if not ultimate_ready:
+		return false
+	reset_ultimate_charge()
+	ultimate_activated.emit(player_id)
+	return true
+
+
+func add_ultimate_charge_for_damage_dealt(damage: int) -> void:
+	add_ultimate_charge(float(damage) * ULTIMATE_CHARGE_PER_DAMAGE_DEALT)
+
+
+func add_ultimate_charge_for_damage_taken(damage: int) -> void:
+	add_ultimate_charge(float(damage) * ULTIMATE_CHARGE_PER_DAMAGE_TAKEN)
+
+
+func take_hit(damage: int, source_position: Vector2) -> bool:
+	if invulnerable_left > 0.0 or health <= 0:
+		return false
 
 	health = maxi(health - damage, 0)
+	add_ultimate_charge_for_damage_taken(damage)
 	invulnerable_left = INVULNERABLE_TIME
 	var knockback_direction := signf(global_position.x - source_position.x)
 	if knockback_direction == 0.0:
@@ -120,6 +159,7 @@ func take_hit(damage: int, source_position: Vector2) -> void:
 	if health <= 0:
 		controls_enabled = false
 		defeated.emit(player_id)
+	return true
 
 
 func _tick_timers(delta: float) -> void:
