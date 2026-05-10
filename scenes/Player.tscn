@@ -1,0 +1,52 @@
+[gd_scene load_steps=5 format=3 uid="uid://pixel_duel_player"]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_player_script"]
+[ext_resource type="Shader" path="res://shaders/chroma_key.gdshader" id="2_chroma"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_chroma"]
+shader = ExtResource("2_chroma")
+shader_parameter/key_color = Color(0, 1, 0, 1)
+shader_parameter/tolerance = 0.34
+shader_parameter/softness = 0.12
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(42, 86)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_player_script")
+
+[node name="FullSprite" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_chroma")
+position = Vector2(0, -58)
+scale = Vector2(0.09, 0.09)
+hframes = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -43)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(42, -76)
+
+[node name="MuzzleFlash" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+visible = false
+position = Vector2(50, -76)
+polygon = PackedVector2Array(0, -10, 18, -4, 31, 0, 18, 4, 0, 10, 7, 0)
+color = Color(1, 0.415686, 0.0980392, 0.9)
+
+[node name="MuzzleFlashCore" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+visible = false
+position = Vector2(50, -76)
+polygon = PackedVector2Array(0, -5, 15, 0, 0, 5, 4, 0)
+color = Color(1, 0.941176, 0.34902, 1)
+
+[node name="MuzzleSpark" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+visible = false
+position = Vector2(50, -76)
+polygon = PackedVector2Array(2, -2, 24, -14, 13, 0, 24, 14, 2, 2)
+color = Color(1, 0.866667, 0.235294, 0.75)

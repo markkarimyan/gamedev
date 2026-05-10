@@ -1,0 +1,163 @@
+[gd_scene load_steps=12 format=3 uid="uid://pixel_duel_game"]
+
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="1_game_script"]
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="3_hud"]
+[ext_resource type="Texture2D" path="res://assets/university_background_pixel.png" id="4_bg"]
+[ext_resource type="Texture2D" path="res://assets/player1_walk_sheet_green.png" id="5_p1_sprite"]
+[ext_resource type="Texture2D" path="res://assets/player2_walk_sheet_green.png" id="6_p2_sprite"]
+[ext_resource type="PackedScene" path="res://scenes/Pickup.tscn" id="7_pickup"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(900, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(164, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(28, 340)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
+size = Vector2(960, 24)
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_game_script")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 960.0
+offset_bottom = 540.0
+color = Color(0.0627451, 0.0784314, 0.105882, 1)
+
+[node name="PixelCampusBackground" type="Sprite2D" parent="."]
+position = Vector2(480, 270)
+scale = Vector2(0.574, 0.574)
+texture = ExtResource("4_bg")
+
+[node name="BackdropShade" type="ColorRect" parent="."]
+offset_right = 960.0
+offset_bottom = 540.0
+color = Color(0.0196078, 0.0235294, 0.0313726, 0.22)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(480, 478)
+
+[node name="GroundShape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="GroundVisual" type="ColorRect" parent="Ground"]
+offset_left = -450.0
+offset_top = -18.0
+offset_right = 450.0
+offset_bottom = 18.0
+color = Color(0.145098, 0.160784, 0.184314, 0.92)
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(16, 310)
+
+[node name="LeftWallShape" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(944, 310)
+
+[node name="RightWallShape" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ceiling" type="StaticBody2D" parent="."]
+position = Vector2(480, -20)
+
+[node name="CeilingShape" type="CollisionShape2D" parent="Ceiling"]
+shape = SubResource("RectangleShape2D_ceiling")
+
+[node name="PlatformLeft" type="StaticBody2D" parent="."]
+position = Vector2(275, 330)
+
+[node name="PlatformLeftShape" type="CollisionShape2D" parent="PlatformLeft"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="PlatformLeftVisual" type="ColorRect" parent="PlatformLeft"]
+offset_left = -82.0
+offset_top = -9.0
+offset_right = 82.0
+offset_bottom = 9.0
+color = Color(0.188235, 0.219608, 0.258824, 1)
+
+[node name="PlatformLeftTop" type="ColorRect" parent="PlatformLeft"]
+offset_left = -82.0
+offset_top = -9.0
+offset_right = 82.0
+offset_bottom = -3.0
+color = Color(0.541176, 0.635294, 0.721569, 1)
+
+[node name="PlatformLeftEdge" type="ColorRect" parent="PlatformLeft"]
+offset_left = -82.0
+offset_top = 5.0
+offset_right = 82.0
+offset_bottom = 9.0
+color = Color(0.0470588, 0.0588235, 0.0784314, 0.72)
+
+[node name="PlatformRight" type="StaticBody2D" parent="."]
+position = Vector2(685, 330)
+
+[node name="PlatformRightShape" type="CollisionShape2D" parent="PlatformRight"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="PlatformRightVisual" type="ColorRect" parent="PlatformRight"]
+offset_left = -82.0
+offset_top = -9.0
+offset_right = 82.0
+offset_bottom = 9.0
+color = Color(0.188235, 0.219608, 0.258824, 1)
+
+[node name="PlatformRightTop" type="ColorRect" parent="PlatformRight"]
+offset_left = -82.0
+offset_top = -9.0
+offset_right = 82.0
+offset_bottom = -3.0
+color = Color(0.541176, 0.635294, 0.721569, 1)
+
+[node name="PlatformRightEdge" type="ColorRect" parent="PlatformRight"]
+offset_left = -82.0
+offset_top = 5.0
+offset_right = 82.0
+offset_bottom = 9.0
+color = Color(0.0470588, 0.0588235, 0.0784314, 0.72)
+
+[node name="FamasPickup" parent="." instance=ExtResource("7_pickup")]
+position = Vector2(275, 297)
+pickup_type = "famas"
+
+[node name="AkPickup" parent="." instance=ExtResource("7_pickup")]
+position = Vector2(685, 297)
+pickup_type = "ak"
+
+[node name="JumpPickup" parent="." instance=ExtResource("7_pickup")]
+position = Vector2(480, 438)
+pickup_type = "jump_boost"
+
+[node name="P1Spawn" type="Marker2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(260, 448)
+
+[node name="P2Spawn" type="Marker2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(700, 448)
+
+[node name="Player1" parent="." instance=ExtResource("2_player")]
+unique_name_in_owner = true
+position = Vector2(260, 448)
+player_id = 1
+body_color = Color(0.227451, 0.654902, 1, 1)
+sprite_texture = ExtResource("5_p1_sprite")
+start_facing = 1
+
+[node name="Player2" parent="." instance=ExtResource("2_player")]
+unique_name_in_owner = true
+position = Vector2(700, 448)
+player_id = 2
+body_color = Color(1, 0.270588, 0.294118, 1)
+sprite_texture = ExtResource("6_p2_sprite")
+start_facing = -1
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+unique_name_in_owner = true

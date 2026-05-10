@@ -1,0 +1,69 @@
+[gd_scene load_steps=2 format=3 uid="uid://pixel_duel_menu"]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_menu_script"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0392157, 0.0509804, 0.0784314, 1)
+
+[node name="Wrap" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -190.0
+offset_right = 250.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="Wrap"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Pixel Duel Arena"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Wrap"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Local 2-player arena fighter"
+horizontal_alignment = 1
+
+[node name="Controls" type="Label" parent="Wrap"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "P1: A/D move, W double jump, F shoot\nP2: Arrows move, Up double jump, Right Ctrl or Numpad 0 shoot\nPickups: FR/RU guns, RF rapid fire, J+ jump boost"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="Wrap"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Start Match"
+
+[node name="QuitButton" type="Button" parent="Wrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Quit"
+
+[connection signal="pressed" from="Wrap/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="Wrap/QuitButton" to="." method="_on_quit_button_pressed"]

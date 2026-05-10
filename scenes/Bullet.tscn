@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://pixel_duel_bullet"]
+
+[ext_resource type="Script" path="res://scripts/bullet.gd" id="1_bullet_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bullet"]
+size = Vector2(16, 8)
+
+[node name="Bullet" type="Area2D"]
+script = ExtResource("1_bullet_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_bullet")
+
+[node name="Visual" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+polygon = PackedVector2Array(-9, -4, 7, -4, 13, 0, 7, 4, -9, 4)
+color = Color(1, 0.87451, 0.27451, 1)
+
+[node name="Core" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+polygon = PackedVector2Array(-5, -2, 7, -2, 10, 0, 7, 2, -5, 2)
+color = Color(1, 1, 0.86, 1)
+
+[node name="Trail" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+polygon = PackedVector2Array(-10, -3, -28, 0, -10, 3)
+color = Color(1, 0.454902, 0.121569, 0.55)

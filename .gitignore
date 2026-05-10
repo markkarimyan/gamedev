@@ -1,0 +1,24 @@
+# Godot generated/editor cache
+.godot/
+
+# Godot export outputs
+export/
+exports/
+build/
+builds/
+*.pck
+*.zip
+*.apk
+*.aab
+*.exe
+*.dmg
+*.app/
+*.x86_64
+*.arm64
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+*.swo
