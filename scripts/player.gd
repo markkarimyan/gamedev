@@ -51,6 +51,7 @@ var previous_shoot_pressed := false
 @onready var start_position := global_position
 
 func _ready() -> void:
+	add_to_group("cinematic_freeze_pauses")
 	facing = start_facing
 	if sprite_texture != null:
 		full_sprite.texture = sprite_texture

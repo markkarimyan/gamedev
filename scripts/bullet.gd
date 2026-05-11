@@ -16,6 +16,7 @@ var age := 0.0
 @onready var trail: Polygon2D = %Trail
 
 func _ready() -> void:
+	add_to_group("cinematic_freeze_pauses")
 	body_entered.connect(_on_body_entered)
 	visual.scale.x = direction
 	core.scale.x = direction
@@ -26,6 +27,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if get_parent().has_method("is_match_cinematic_frozen") and get_parent().is_match_cinematic_frozen():
+		return
 	position.x += speed * direction * delta
 	age += delta
 	if age >= LIFETIME:
@@ -33,6 +36,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if get_parent().has_method("is_match_cinematic_frozen") and get_parent().is_match_cinematic_frozen():
+		return
 	var target_player_id = body.get("player_id")
 	if target_player_id == owner_id:
 		return

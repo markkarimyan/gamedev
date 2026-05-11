@@ -1,12 +1,19 @@
 extends Node2D
 
+signal ultimate_cinematic_started(player_id: int)
+signal ultimate_cinematic_finished(player_id: int)
+
 const TARGET_SCORE := 3
 const ULTIMATE_CHARGE_PER_SECOND := 4.0
+const ULTIMATE_CINEMATIC_SECONDS := 0.45
 
 var score_1 := 0
 var score_2 := 0
 var round_number := 1
 var round_active := true
+var cinematic_freeze_active := false
+var cinematic_player_id := 0
+var _frozen_physics_nodes: Array[Node] = []
 
 @onready var player_1 = %Player1
 @onready var player_2 = %Player2
@@ -19,13 +26,15 @@ func _ready() -> void:
 	player_2.health_changed.connect(_on_player_health_changed)
 	player_1.ultimate_charge_changed.connect(_on_player_ultimate_charge_changed)
 	player_2.ultimate_charge_changed.connect(_on_player_ultimate_charge_changed)
+	player_1.ultimate_activated.connect(_on_player_ultimate_activated)
+	player_2.ultimate_activated.connect(_on_player_ultimate_activated)
 	player_1.defeated.connect(_on_player_defeated)
 	player_2.defeated.connect(_on_player_defeated)
 	_start_round()
 
 
 func _process(delta: float) -> void:
-	if not round_active:
+	if not round_active or cinematic_freeze_active:
 		return
 	player_1.add_ultimate_charge(ULTIMATE_CHARGE_PER_SECOND * delta)
 	player_2.add_ultimate_charge(ULTIMATE_CHARGE_PER_SECOND * delta)
@@ -37,13 +46,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().reload_current_scene()
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
-		elif event.keycode == KEY_G and round_active:
+		elif event.keycode == KEY_G and round_active and not cinematic_freeze_active:
 			player_1.try_activate_ultimate()
-		elif event.keycode == KEY_SHIFT and round_active:
+		elif event.keycode == KEY_SHIFT and round_active and not cinematic_freeze_active:
 			player_2.try_activate_ultimate()
 
 
 func _start_round() -> void:
+	_set_match_cinematic_frozen(false)
 	round_active = true
 	hud.set_round(round_number)
 	hud.set_scores(score_1, score_2, TARGET_SCORE)
@@ -61,6 +71,8 @@ func _on_player_ultimate_charge_changed(player_id: int, charge: float, max_charg
 
 
 func apply_player_hit(attacker_id: int, defender_id: int, damage: int, source_position: Vector2) -> bool:
+	if cinematic_freeze_active:
+		return false
 	var attacker := _player_for_id(attacker_id)
 	var defender := _player_for_id(defender_id)
 	if defender == null or attacker == null or attacker == defender:
@@ -79,9 +91,75 @@ func _player_for_id(player_id: int) -> Player:
 	return null
 
 
+func is_match_cinematic_frozen() -> bool:
+	return cinematic_freeze_active
+
+
+func start_ultimate_cinematic(player_id: int, duration := ULTIMATE_CINEMATIC_SECONDS) -> bool:
+	if not round_active or cinematic_freeze_active:
+		return false
+	var player := _player_for_id(player_id)
+	if player == null:
+		return false
+
+	cinematic_player_id = player_id
+	_set_match_cinematic_frozen(true)
+	ultimate_cinematic_started.emit(player_id)
+	await get_tree().create_timer(duration).timeout
+	if cinematic_freeze_active and cinematic_player_id == player_id:
+		_set_match_cinematic_frozen(false)
+		ultimate_cinematic_finished.emit(player_id)
+	return true
+
+
+func _on_player_ultimate_activated(player_id: int) -> void:
+	start_ultimate_cinematic(player_id)
+
+
+func _set_match_cinematic_frozen(is_frozen: bool) -> void:
+	if cinematic_freeze_active == is_frozen:
+		return
+	cinematic_freeze_active = is_frozen
+	if is_frozen:
+		_freeze_gameplay_nodes()
+	else:
+		_restore_gameplay_nodes()
+		cinematic_player_id = 0
+
+
+func _freeze_gameplay_nodes() -> void:
+	_frozen_physics_nodes.clear()
+	for node in _cinematic_freeze_nodes(self):
+		if node is Node and node.is_physics_processing():
+			_frozen_physics_nodes.append(node)
+			node.set_physics_process(false)
+	player_1.controls_enabled = false
+	player_2.controls_enabled = false
+
+
+func _restore_gameplay_nodes() -> void:
+	for node in _frozen_physics_nodes:
+		if is_instance_valid(node):
+			node.set_physics_process(true)
+	_frozen_physics_nodes.clear()
+	if round_active:
+		player_1.controls_enabled = true
+		player_2.controls_enabled = true
+
+
+func _cinematic_freeze_nodes(parent: Node) -> Array[Node]:
+	var nodes: Array[Node] = []
+	for child in parent.get_children():
+		if child.is_in_group("cinematic_freeze_pauses"):
+			nodes.append(child)
+		nodes.append_array(_cinematic_freeze_nodes(child))
+	return nodes
+
+
 func _on_player_defeated(loser_id: int) -> void:
 	if not round_active:
 		return
+	_set_match_cinematic_frozen(false)
 	round_active = false
 	player_1.controls_enabled = false
 	player_2.controls_enabled = false

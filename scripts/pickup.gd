@@ -14,6 +14,8 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if get_parent().has_method("is_match_cinematic_frozen") and get_parent().is_match_cinematic_frozen():
+		return
 	if not body.has_method("collect_pickup"):
 		return
 	body.collect_pickup(pickup_type)
