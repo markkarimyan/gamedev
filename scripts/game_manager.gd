@@ -107,19 +107,20 @@ func start_ultimate_cinematic(player_id: int, duration := ULTIMATE_CINEMATIC_SEC
 	cinematic_player_id = player_id
 	_set_match_cinematic_frozen(true)
 	ultimate_cinematic_started.emit(player_id)
-	await get_tree().create_timer(duration).timeout
-	if cinematic_freeze_active and cinematic_player_id == player_id:
-		_set_match_cinematic_frozen(false)
-		ultimate_cinematic_finished.emit(player_id)
+	get_tree().create_timer(duration).timeout.connect(_finish_ultimate_cinematic.bind(player_id))
 	return true
 
 
+func _finish_ultimate_cinematic(player_id: int) -> void:
+	if cinematic_freeze_active and cinematic_player_id == player_id:
+		_set_match_cinematic_frozen(false)
+		ultimate_cinematic_finished.emit(player_id)
+		if round_active and player_id == 1:
+			_spawn_player_1_car_ultimate()
+
+
 func _on_player_ultimate_activated(player_id: int) -> void:
-	await start_ultimate_cinematic(player_id)
-	if not round_active:
-		return
-	if player_id == 1:
-		_spawn_player_1_car_ultimate()
+	start_ultimate_cinematic(player_id)
 
 
 func _spawn_player_1_car_ultimate() -> void:
