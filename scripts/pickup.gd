@@ -14,7 +14,8 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if get_parent().has_method("is_match_cinematic_frozen") and get_parent().is_match_cinematic_frozen():
+	var match_root := _find_match_root()
+	if match_root != null and match_root.is_match_cinematic_frozen():
 		return
 	if not body.has_method("collect_pickup"):
 		return
@@ -54,3 +55,12 @@ func _update_visuals() -> void:
 			label.text = "+"
 			body_visual.color = Color(1.0, 1.0, 1.0, 1.0)
 			icon.polygon = PackedVector2Array([Vector2(-4, -11), Vector2(4, -11), Vector2(4, -4), Vector2(11, -4), Vector2(11, 4), Vector2(4, 4), Vector2(4, 11), Vector2(-4, 11), Vector2(-4, 4), Vector2(-11, 4), Vector2(-11, -4), Vector2(-4, -4)])
+
+
+func _find_match_root() -> Node:
+	var node := get_parent()
+	while node != null:
+		if node.has_method("is_match_cinematic_frozen"):
+			return node
+		node = node.get_parent()
+	return null

@@ -19,8 +19,9 @@ var _frozen_physics_nodes: Array[Node] = []
 @onready var player_1 = %Player1
 @onready var player_2 = %Player2
 @onready var hud = %HUD
-@onready var p1_spawn: Marker2D = %P1Spawn
-@onready var p2_spawn: Marker2D = %P2Spawn
+@onready var arena: Node2D = %Arena
+@onready var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
+@onready var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
 
 func _ready() -> void:
 	player_1.health_changed.connect(_on_player_health_changed)

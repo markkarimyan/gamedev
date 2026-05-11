@@ -59,7 +59,8 @@ Match controls:
 ## Project Structure
 
 - `scenes/MainMenu.tscn`: title screen and controls info
-- `scenes/Game.tscn`: arena, players, HUD, match scene
+- `scenes/Game.tscn`: match scene that composes the arena, players, and HUD
+- `scenes/arenas/CampusArena.tscn`: reusable hand-built arena with background, gameplay geometry, spawns, pickups, and a future gimmick placeholder
 - `scenes/Player.tscn`: reusable fighter scene
 - `scenes/HUD.tscn`: health bars, scores, round display
 - `scenes/WinScreen.tscn`: final match winner screen

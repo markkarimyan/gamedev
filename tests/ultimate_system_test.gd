@@ -6,6 +6,7 @@ const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 var _failures := 0
 
 func _initialize() -> void:
+	await _test_arena_uses_authored_reusable_structure()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -16,6 +17,24 @@ func _initialize() -> void:
 	await _test_player_1_coffee_overdrive_buffs_then_crashes()
 	await _test_player_1_coffee_modifiers_clear_on_round_reset()
 	_finish()
+
+
+func _test_arena_uses_authored_reusable_structure() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var arena: Node = game.get_node("%Arena")
+	_assert_true(arena.has_node("Background"), "Arena has a dedicated decorative background container")
+	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Arena has authored gameplay platform geometry")
+	_assert_true(arena.has_node("Spawns/P1Spawn") and arena.has_node("Spawns/P2Spawn"), "Arena exposes authored player spawn markers")
+	_assert_true(arena.has_node("Pickups/FamasPickup") and arena.has_node("Pickups/AkPickup") and arena.has_node("Pickups/JumpPickup"), "Arena keeps pickups in an authored pickup container")
+	_assert_true(arena.has_node("FutureGimmick/Placeholder"), "Arena reserves a place for a future arena gimmick")
+	_assert_true(game.get_node("%Player1").start_position == arena.get_node("Spawns/P1Spawn").global_position, "Player 1 round reset uses the authored arena spawn")
+	_assert_true(game.get_node("%Player2").start_position == arena.get_node("Spawns/P2Spawn").global_position, "Player 2 round reset uses the authored arena spawn")
+
+	game.queue_free()
+	await process_frame
 
 
 func _test_players_gain_ultimate_charge_during_active_round() -> void:
