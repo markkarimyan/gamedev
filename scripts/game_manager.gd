@@ -117,6 +117,8 @@ func _finish_ultimate_cinematic(player_id: int) -> void:
 		ultimate_cinematic_finished.emit(player_id)
 		if round_active and player_id == 1:
 			_spawn_player_1_car_ultimate()
+		elif round_active and player_id == 2:
+			player_2.start_coffee_overdrive()
 
 
 func _on_player_ultimate_activated(player_id: int) -> void:

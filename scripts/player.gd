@@ -17,6 +17,12 @@ const SHOT_RECOIL_TIME := 0.12
 const INVULNERABLE_TIME := 0.45
 const KNOCKBACK_CONTROL_LOCK_TIME := 0.18
 const KNOCKBACK_FORCE := Vector2(330.0, -170.0)
+const COFFEE_OVERDRIVE_SECONDS := 2.2
+const COFFEE_CRASH_SECONDS := 0.85
+const COFFEE_SPEED_MULTIPLIER := 1.45
+const COFFEE_JUMP_MULTIPLIER := 1.18
+const COFFEE_SHOOT_COOLDOWN_MULTIPLIER := 0.58
+const COFFEE_CRASH_SPEED_MULTIPLIER := 0.62
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 
 @export var player_id := 1
@@ -37,6 +43,8 @@ var invulnerable_left := 0.0
 var knockback_left := 0.0
 var walk_frame_time := 0.0
 var jump_boost_left := 0.0
+var coffee_overdrive_left := 0.0
+var coffee_crash_left := 0.0
 var weapon_name := ""
 var weapon_damage := 12
 var weapon_cooldown := 0.42
@@ -73,17 +81,17 @@ func _physics_process(delta: float) -> void:
 
 	var direction := _movement_direction()
 	if controls_enabled and knockback_left <= 0.0:
-		velocity.x = direction * SPEED
+		velocity.x = direction * current_movement_speed()
 		if direction != 0:
 			facing = int(sign(direction))
 			_update_facing()
 		if _jump_just_pressed() and jumps_left > 0:
-			velocity.y = JUMP_VELOCITY
+			velocity.y = current_jump_velocity()
 			jumps_left -= 1
 		if _shoot_just_pressed():
 			_shoot()
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, SPEED * delta * 4.0)
+		velocity.x = move_toward(velocity.x, 0.0, current_movement_speed() * delta * 4.0)
 
 	move_and_slide()
 	_animate_sprite(delta, direction)
@@ -108,6 +116,8 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	knockback_left = 0.0
 	walk_frame_time = 0.0
 	jump_boost_left = 0.0
+	coffee_overdrive_left = 0.0
+	coffee_crash_left = 0.0
 	_set_muzzle_fire_visible(false)
 	full_sprite.position = Vector2(0, -58)
 	full_sprite.rotation = 0.0
@@ -137,6 +147,41 @@ func try_activate_ultimate() -> bool:
 	reset_ultimate_charge()
 	ultimate_activated.emit(player_id)
 	return true
+
+
+func start_coffee_overdrive() -> void:
+	if player_id != 2:
+		return
+	coffee_overdrive_left = COFFEE_OVERDRIVE_SECONDS
+	coffee_crash_left = 0.0
+
+
+func is_coffee_overdrive_active() -> bool:
+	return coffee_overdrive_left > 0.0
+
+
+func is_coffee_crashing() -> bool:
+	return coffee_crash_left > 0.0
+
+
+func current_movement_speed() -> float:
+	if is_coffee_overdrive_active():
+		return SPEED * COFFEE_SPEED_MULTIPLIER
+	if is_coffee_crashing():
+		return SPEED * COFFEE_CRASH_SPEED_MULTIPLIER
+	return SPEED
+
+
+func current_jump_velocity() -> float:
+	if is_coffee_overdrive_active():
+		return JUMP_VELOCITY * COFFEE_JUMP_MULTIPLIER
+	return JUMP_VELOCITY
+
+
+func current_weapon_cooldown() -> float:
+	if is_coffee_overdrive_active():
+		return weapon_cooldown * COFFEE_SHOOT_COOLDOWN_MULTIPLIER
+	return weapon_cooldown
 
 
 func add_ultimate_charge_for_damage_dealt(damage: int) -> void:
@@ -174,6 +219,12 @@ func _tick_timers(delta: float) -> void:
 		jump_boost_left -= delta
 		if jump_boost_left <= 0.0:
 			max_jumps = 2
+	if coffee_overdrive_left > 0.0:
+		coffee_overdrive_left -= delta
+		if coffee_overdrive_left <= 0.0:
+			coffee_crash_left = COFFEE_CRASH_SECONDS
+	if coffee_crash_left > 0.0:
+		coffee_crash_left -= delta
 	if shot_recoil_left > 0.0:
 		shot_recoil_left -= delta
 		if shot_recoil_left <= 0.0:
@@ -192,7 +243,7 @@ func _tick_timers(delta: float) -> void:
 func _shoot() -> void:
 	if shoot_cooldown_left > 0.0:
 		return
-	shoot_cooldown_left = weapon_cooldown
+	shoot_cooldown_left = current_weapon_cooldown()
 	var bullet := BULLET_SCENE.instantiate()
 	bullet.direction = facing
 	bullet.owner_id = player_id
