@@ -18,7 +18,7 @@ script = ExtResource("1_player_script")
 [node name="FullSprite" type="Sprite2D" parent="."]
 unique_name_in_owner = true
 material = SubResource("ShaderMaterial_chroma")
-position = Vector2(0, -58)
+position = Vector2(0, -33)
 scale = Vector2(0.09, 0.09)
 hframes = 4
 
@@ -28,12 +28,12 @@ shape = SubResource("RectangleShape2D_body")
 
 [node name="Muzzle" type="Marker2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(42, -76)
+position = Vector2(42, -51)
 
 [node name="MuzzleFlash" type="Polygon2D" parent="."]
 unique_name_in_owner = true
 visible = false
-position = Vector2(50, -76)
+position = Vector2(50, -51)
 polygon = PackedVector2Array(0, -10, 18, -4, 31, 0, 18, 4, 0, 10, 7, 0)
 color = Color(1, 0.415686, 0.0980392, 0.9)
 

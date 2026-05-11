@@ -24,6 +24,8 @@ const COFFEE_JUMP_MULTIPLIER := 1.18
 const COFFEE_SHOOT_COOLDOWN_MULTIPLIER := 0.58
 const COFFEE_CRASH_SPEED_MULTIPLIER := 0.62
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
+const SPRITE_BASE_POSITION := Vector2(0, -33)
+const MUZZLE_Y := -51.0
 
 @export var player_id := 1
 @export var body_color := Color("3aa7ff")
@@ -119,7 +121,7 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	coffee_overdrive_left = 0.0
 	coffee_crash_left = 0.0
 	_set_muzzle_fire_visible(false)
-	full_sprite.position = Vector2(0, -58)
+	full_sprite.position = SPRITE_BASE_POSITION
 	full_sprite.rotation = 0.0
 	full_sprite.frame = 0
 	previous_shoot_pressed = false
@@ -258,9 +260,9 @@ func _shoot() -> void:
 func _update_facing() -> void:
 	full_sprite.flip_h = facing != start_facing
 	muzzle.position.x = 42.0 * facing
-	muzzle.position.y = -76.0
+	muzzle.position.y = MUZZLE_Y
 	muzzle_flash.position.x = 50.0 * facing
-	muzzle_flash.position.y = -76.0
+	muzzle_flash.position.y = MUZZLE_Y
 	muzzle_flash.scale.x = facing
 	muzzle_flash_core.position = muzzle_flash.position
 	muzzle_flash_core.scale.x = facing
@@ -269,7 +271,7 @@ func _update_facing() -> void:
 
 
 func _animate_sprite(delta: float, direction: float) -> void:
-	var base_position := Vector2(0, -58)
+	var base_position := SPRITE_BASE_POSITION
 	if controls_enabled and abs(direction) > 0.0 and is_on_floor():
 		walk_frame_time += delta
 		full_sprite.frame = int(walk_frame_time * 10.0) % 4

@@ -79,24 +79,24 @@ position = Vector2(275, 330)
 shape = SubResource("RectangleShape2D_platform")
 
 [node name="PlatformLeftVisual" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformLeft"]
-offset_left = -82.0
+offset_left = -88.0
 offset_top = -9.0
-offset_right = 82.0
-offset_bottom = 9.0
+offset_right = 88.0
+offset_bottom = 23.0
 color = Color(0.188235, 0.219608, 0.258824, 1)
 
 [node name="PlatformLeftTop" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformLeft"]
-offset_left = -82.0
+offset_left = -88.0
 offset_top = -9.0
-offset_right = 82.0
-offset_bottom = -3.0
+offset_right = 88.0
+offset_bottom = -1.0
 color = Color(0.541176, 0.635294, 0.721569, 1)
 
 [node name="PlatformLeftEdge" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformLeft"]
-offset_left = -82.0
-offset_top = 5.0
-offset_right = 82.0
-offset_bottom = 9.0
+offset_left = -88.0
+offset_top = 13.0
+offset_right = 88.0
+offset_bottom = 23.0
 color = Color(0.0470588, 0.0588235, 0.0784314, 0.72)
 
 [node name="PlatformRight" type="StaticBody2D" parent="GameplayGeometry/Platforms"]
@@ -106,24 +106,24 @@ position = Vector2(685, 330)
 shape = SubResource("RectangleShape2D_platform")
 
 [node name="PlatformRightVisual" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformRight"]
-offset_left = -82.0
+offset_left = -88.0
 offset_top = -9.0
-offset_right = 82.0
-offset_bottom = 9.0
+offset_right = 88.0
+offset_bottom = 23.0
 color = Color(0.188235, 0.219608, 0.258824, 1)
 
 [node name="PlatformRightTop" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformRight"]
-offset_left = -82.0
+offset_left = -88.0
 offset_top = -9.0
-offset_right = 82.0
-offset_bottom = -3.0
+offset_right = 88.0
+offset_bottom = -1.0
 color = Color(0.541176, 0.635294, 0.721569, 1)
 
 [node name="PlatformRightEdge" type="ColorRect" parent="GameplayGeometry/Platforms/PlatformRight"]
-offset_left = -82.0
-offset_top = 5.0
-offset_right = 82.0
-offset_bottom = 9.0
+offset_left = -88.0
+offset_top = 13.0
+offset_right = 88.0
+offset_bottom = 23.0
 color = Color(0.0470588, 0.0588235, 0.0784314, 0.72)
 
 [node name="Spawns" type="Node2D" parent="."]

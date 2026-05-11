@@ -2,11 +2,23 @@ extends SceneTree
 
 const GAME_SCENE := preload("res://scenes/Game.tscn")
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
+const ARENA_SCENES: Array[PackedScene] = [
+	preload("res://scenes/arenas/CampusArena.tscn"),
+	preload("res://scenes/arenas/CourtyardArena.tscn"),
+	preload("res://scenes/arenas/RooftopArena.tscn"),
+]
+const PLAYER_COLLISION_SIZE := Vector2(42, 86)
+const PLAYER_COLLISION_OFFSET := Vector2(0, -43)
+const PLATFORM_VISUAL_HORIZONTAL_PADDING := 6.0
+const PLATFORM_VISUAL_BOTTOM_PADDING := 12.0
+const PLATFORM_TOP_ALIGNMENT_TOLERANCE := 0.1
 
 var _failures := 0
 
 func _initialize() -> void:
 	await _test_arena_uses_authored_reusable_structure()
+	await _test_player_sprite_feet_align_with_collision_feet()
+	await _test_authored_arena_platforms_match_collision_and_clear_spawns()
 	await _test_match_randomizes_authored_arenas_between_rounds()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
@@ -36,6 +48,55 @@ func _test_arena_uses_authored_reusable_structure() -> void:
 
 	game.queue_free()
 	await process_frame
+
+
+func _test_player_sprite_feet_align_with_collision_feet() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	for player: Player in [game.get_node("%Player1"), game.get_node("%Player2")]:
+		var full_sprite: Sprite2D = player.get_node("%FullSprite")
+		var sprite_bottom := full_sprite.global_position.y + full_sprite.texture.get_height() * full_sprite.scale.y * 0.5
+		_assert_true(absf(sprite_bottom - player.global_position.y) <= 1.0, "Player %d sprite feet align with collision feet" % player.player_id)
+
+	game.queue_free()
+	await process_frame
+
+
+func _test_authored_arena_platforms_match_collision_and_clear_spawns() -> void:
+	for arena_scene in ARENA_SCENES:
+		var arena := arena_scene.instantiate()
+		root.add_child(arena)
+		await process_frame
+
+		var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
+		var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
+		var spawn_rects := [
+			_player_rect_at_spawn(p1_spawn.global_position),
+			_player_rect_at_spawn(p2_spawn.global_position),
+		]
+
+		for platform: StaticBody2D in arena.get_node("GameplayGeometry/Platforms").get_children():
+			var shape_node := _first_child_of_type(platform, CollisionShape2D) as CollisionShape2D
+			var visual := _first_child_of_type(platform, ColorRect) as ColorRect
+			if shape_node == null or not shape_node.shape is RectangleShape2D:
+				continue
+
+			var shape_size := (shape_node.shape as RectangleShape2D).size
+			var platform_rect := Rect2(shape_node.global_position - shape_size * 0.5, shape_size)
+			if visual != null:
+				var visual_rect := Rect2(visual.global_position, visual.size)
+				_assert_true(visual_rect.position.x <= platform_rect.position.x - PLATFORM_VISUAL_HORIZONTAL_PADDING, "%s visual extends past the left side of its hitbox" % platform.name)
+				_assert_true(visual_rect.end.x >= platform_rect.end.x + PLATFORM_VISUAL_HORIZONTAL_PADDING, "%s visual extends past the right side of its hitbox" % platform.name)
+				_assert_true(absf(visual_rect.position.y - platform_rect.position.y) <= PLATFORM_TOP_ALIGNMENT_TOLERANCE, "%s visual top aligns with its hitbox top" % platform.name)
+				_assert_true(visual_rect.end.y >= platform_rect.end.y + PLATFORM_VISUAL_BOTTOM_PADDING, "%s visual bottom extends below its hitbox" % platform.name)
+
+			for spawn_rect in spawn_rects:
+				_assert_true(not spawn_rect.intersects(platform_rect), "%s spawn areas are clear of platform hitboxes" % arena.name)
+
+		arena.queue_free()
+		await process_frame
 
 
 func _test_match_randomizes_authored_arenas_between_rounds() -> void:
@@ -330,6 +391,17 @@ func _process_seconds(seconds: float) -> void:
 
 func _wait_seconds(seconds: float) -> void:
 	await create_timer(seconds).timeout
+
+
+func _player_rect_at_spawn(spawn_position: Vector2) -> Rect2:
+	return Rect2(spawn_position + PLAYER_COLLISION_OFFSET - PLAYER_COLLISION_SIZE * 0.5, PLAYER_COLLISION_SIZE)
+
+
+func _first_child_of_type(parent: Node, type: Variant) -> Node:
+	for child in parent.get_children():
+		if is_instance_of(child, type):
+			return child
+	return null
 
 
 func _assert_true(condition: bool, message: String) -> void:
