@@ -39,6 +39,7 @@ func _initialize() -> void:
 	await _test_player_1_coffee_modifiers_clear_on_round_reset()
 	await _test_cram_notes_pickup_temporarily_boosts_movement_and_resets()
 	await _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pickups()
+	await _test_public_facing_names_are_campus_parody_and_hud_readable()
 	_finish()
 
 
@@ -310,7 +311,7 @@ func _test_ultimate_readiness_reset_and_activation_gate() -> void:
 	_assert_true(activations[1] == 0, "Player 1 cannot activate ultimate before ready")
 
 	player_1.add_ultimate_charge(1.0)
-	_assert_true(hud.get_node("%P1UltimateLabel").text == "G READY", "HUD shows Player 1 ultimate ready state")
+	_assert_true(hud.get_node("%P1UltimateLabel").text == "G: Coffee Rush Ready", "HUD shows Player 1 ultimate ready state")
 	game._unhandled_input(_key_press(KEY_G))
 	_assert_true(activations[1] == 1, "Player 1 activates ultimate with G when ready")
 	_assert_true(player_1.ultimate_charge == 0.0, "Ultimate charge is consumed after activation")
@@ -564,9 +565,9 @@ func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pi
 	var player_1: Player = game.get_node("%Player1")
 	var starting_cooldown := player_1.weapon_cooldown
 	player_1.collect_pickup("ak")
-	_assert_true(player_1.weapon_name == "Russian AK", "Existing AK pickup still swaps weapons")
+	_assert_true(player_1.weapon_name == "Dorm-Room Clanker", "Existing heavy rifle pickup still swaps weapons")
 	player_1.collect_pickup("famas")
-	_assert_true(player_1.weapon_name == "French FAMAS", "Existing FAMAS pickup still swaps weapons")
+	_assert_true(player_1.weapon_name == "Lab-Partner Blaster", "Existing fast rifle pickup still swaps weapons")
 	player_1.collect_pickup("rapid")
 	_assert_true(player_1.weapon_cooldown < starting_cooldown, "Existing rapid-fire pickup still lowers weapon cooldown")
 	player_1.collect_pickup("jump_boost")
@@ -577,6 +578,60 @@ func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pi
 
 	game.queue_free()
 	await process_frame
+
+
+func _test_public_facing_names_are_campus_parody_and_hud_readable() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var hud: HUD = game.get_node("%HUD")
+	hud.set_ultimate_charge(1, 42.0, Player.MAX_ULTIMATE_CHARGE, false)
+	hud.set_ultimate_charge(2, 87.0, Player.MAX_ULTIMATE_CHARGE, false)
+	_assert_true(hud.get_node("%P1UltimateLabel").text == "Coffee Rush 42%", "HUD names Player 1 ultimate while charging")
+	_assert_true(hud.get_node("%P2UltimateLabel").text == "Shuttle Sweep 87%", "HUD names Player 2 ultimate while charging")
+
+	hud.set_ultimate_charge(1, Player.MAX_ULTIMATE_CHARGE, Player.MAX_ULTIMATE_CHARGE, true)
+	hud.set_ultimate_charge(2, Player.MAX_ULTIMATE_CHARGE, Player.MAX_ULTIMATE_CHARGE, true)
+	_assert_true(hud.get_node("%P1UltimateLabel").text == "G: Coffee Rush Ready", "HUD ready prompt includes Player 1 key and ultimate name")
+	_assert_true(hud.get_node("%P2UltimateLabel").text == "Right Shift: Shuttle Sweep Ready", "HUD ready prompt includes Player 2 key and ultimate name")
+
+	var player_1: Player = game.get_node("%Player1")
+	player_1.collect_pickup("famas")
+	_assert_true(player_1.weapon_name == "Lab-Partner Blaster", "Fast rifle pickup uses campus parody naming")
+	player_1.collect_pickup("ak")
+	_assert_true(player_1.weapon_name == "Dorm-Room Clanker", "Heavy rifle pickup uses campus parody naming")
+
+	game.queue_free()
+	await process_frame
+
+	var fast_pickup := PICKUP_SCENE.instantiate()
+	fast_pickup.pickup_type = "famas"
+	root.add_child(fast_pickup)
+	await process_frame
+	_assert_true(fast_pickup.get_node("%Label").text == "LB", "Fast rifle pickup label matches its campus parody name")
+	fast_pickup.queue_free()
+	await process_frame
+
+	var heavy_pickup := PICKUP_SCENE.instantiate()
+	heavy_pickup.pickup_type = "ak"
+	root.add_child(heavy_pickup)
+	await process_frame
+	_assert_true(heavy_pickup.get_node("%Label").text == "DC", "Heavy rifle pickup label matches its campus parody name")
+	heavy_pickup.queue_free()
+	await process_frame
+
+	var menu_text := FileAccess.get_file_as_string("res://scenes/MainMenu.tscn")
+	_assert_true(menu_text.contains("Coffee Rush") and menu_text.contains("Shuttle Sweep"), "Main menu teaches named ultimates")
+	_assert_true(not _contains_any(menu_text, ["FAMAS", " AK", "Red Bull", "Honda"]), "Main menu avoids real-world brand and weapon references")
+
+	var readme_text := FileAccess.get_file_as_string("res://README.md")
+	_assert_true(readme_text.contains("Lab-Partner Blaster") and readme_text.contains("Dorm-Room Clanker"), "README uses public campus-comedy pickup names")
+	_assert_true(not _contains_any(readme_text, ["FAMAS", " AK", "Red Bull", "Honda"]), "README avoids real-world brand and weapon references")
+
+	var pass_text := FileAccess.get_file_as_string("res://docs/readability-and-naming-pass.md")
+	_assert_true(pass_text.contains("Player, bullet, pickup, ultimate, hazard, platform, and background readability reviewed"), "Readability pass records the cross-arena review")
+	_assert_true(pass_text.contains("No follow-up issues required"), "Readability pass records follow-up issue decision")
 
 
 func _key_press(keycode: Key) -> InputEventKey:
@@ -606,6 +661,13 @@ func _first_child_of_type(parent: Node, type: Variant) -> Node:
 		if is_instance_of(child, type):
 			return child
 	return null
+
+
+func _contains_any(text: String, needles: Array[String]) -> bool:
+	for needle in needles:
+		if text.contains(needle):
+			return true
+	return false
 
 
 func _assert_true(condition: bool, message: String) -> void:

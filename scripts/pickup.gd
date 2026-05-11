@@ -36,11 +36,11 @@ func _hide_then_respawn() -> void:
 func _update_visuals() -> void:
 	match pickup_type:
 		"famas":
-			label.text = "FR"
+			label.text = "LB"
 			body_visual.color = Color(0.2, 0.62, 1.0, 1.0)
 			icon.polygon = PackedVector2Array([Vector2(-11, -4), Vector2(6, -4), Vector2(14, 1), Vector2(-2, 3), Vector2(-2, 8), Vector2(-8, 8), Vector2(-8, 3), Vector2(-11, 3)])
 		"ak":
-			label.text = "RU"
+			label.text = "DC"
 			body_visual.color = Color(0.95, 0.22, 0.18, 1.0)
 			icon.polygon = PackedVector2Array([Vector2(-12, -3), Vector2(8, -5), Vector2(13, -1), Vector2(-4, 3), Vector2(-6, 8), Vector2(-11, 8), Vector2(-9, 3), Vector2(-12, 2)])
 		"rapid":

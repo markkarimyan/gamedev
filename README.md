@@ -17,7 +17,7 @@ Player 1:
 - `W`: jump
 - Press `W` again in air: double jump
 - `F`: shoot
-- `G`: ultimate
+- `G`: Coffee Rush ultimate
 
 Player 2:
 
@@ -25,7 +25,7 @@ Player 2:
 - `Up`: jump
 - Press `Up` again in air: double jump
 - `Right Ctrl` or `Numpad 0`: shoot
-- `Right Shift`: ultimate
+- `Right Shift`: Shuttle Sweep ultimate
 
 Match controls:
 
@@ -42,8 +42,8 @@ Match controls:
 - Double jump
 - Four-frame walking spritesheets and shooting recoil/flash
 - Bullet hit detection
-- French/Swedish-inspired fast rifle for Player 1
-- Russian-inspired heavier rifle for Player 2
+- Lab-Partner Blaster fast rifle for Player 1
+- Dorm-Room Clanker heavier rifle for Player 2
 - Arena pickups for weapon swaps, rapid fire, medkits, and jump boost
 - Health bars
 - Ultimate charge meters and ready prompts

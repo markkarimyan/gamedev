@@ -51,7 +51,7 @@ horizontal_alignment = 1
 [node name="Controls" type="Label" parent="Wrap"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "P1: A/D move, W double jump, F shoot\nP2: Arrows move, Up double jump, Right Ctrl or Numpad 0 shoot\nPickups: FR/RU guns, RF rapid fire, J+ jump boost"
+text = "P1: A/D move, W double jump, F shoot, G Coffee Rush\nP2: Arrows move, Up double jump, Right Ctrl or Numpad 0 shoot, Right Shift Shuttle Sweep\nPickups: LB Lab-Partner Blaster, DC Dorm-Room Clanker, RF rapid fire, J+ jump boost"
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="Wrap"]

@@ -325,9 +325,9 @@ func _animate_muzzle_fire() -> void:
 func collect_pickup(pickup_type: String) -> void:
 	match pickup_type:
 		"famas":
-			_apply_weapon("French FAMAS", 11, 0.26, 690.0, Color(0.2, 0.62, 1.0, 1.0))
+			_apply_weapon("Lab-Partner Blaster", 11, 0.26, 690.0, Color(0.2, 0.62, 1.0, 1.0))
 		"ak":
-			_apply_weapon("Russian AK", 17, 0.48, 610.0, Color(1.0, 0.22, 0.16, 1.0))
+			_apply_weapon("Dorm-Room Clanker", 17, 0.48, 610.0, Color(1.0, 0.22, 0.16, 1.0))
 		"rapid":
 			weapon_cooldown = maxf(weapon_cooldown * 0.55, 0.16)
 			weapon_bullet_color = Color(1.0, 0.9, 0.15, 1.0)
@@ -344,9 +344,9 @@ func collect_pickup(pickup_type: String) -> void:
 
 func _apply_starting_weapon() -> void:
 	if player_id == 1:
-		_apply_weapon("French FAMAS", 11, 0.30, 670.0, Color(0.2, 0.62, 1.0, 1.0))
+		_apply_weapon("Lab-Partner Blaster", 11, 0.30, 670.0, Color(0.2, 0.62, 1.0, 1.0))
 	else:
-		_apply_weapon("Russian AK", 15, 0.44, 600.0, Color(1.0, 0.26, 0.18, 1.0))
+		_apply_weapon("Dorm-Room Clanker", 15, 0.44, 600.0, Color(1.0, 0.26, 0.18, 1.0))
 
 
 func _apply_weapon(new_name: String, damage: int, cooldown: float, bullet_speed: float, color: Color) -> void:

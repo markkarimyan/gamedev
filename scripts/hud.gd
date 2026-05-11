@@ -26,12 +26,13 @@ func set_scores(score_1: int, score_2: int, target_score: int) -> void:
 func set_ultimate_charge(player_id: int, charge: float, max_charge: float, is_ready: bool) -> void:
 	var bar := p1_ultimate if player_id == 1 else p2_ultimate
 	var label := p1_ultimate_label if player_id == 1 else p2_ultimate_label
+	var ultimate_name := "Coffee Rush" if player_id == 1 else "Shuttle Sweep"
 	bar.max_value = max_charge
 	bar.value = charge
 	if is_ready:
-		label.text = "G READY" if player_id == 1 else "RSHIFT READY"
+		label.text = "G: %s Ready" % ultimate_name if player_id == 1 else "Right Shift: %s Ready" % ultimate_name
 	else:
-		label.text = "ULT %d%%" % int(round((charge / max_charge) * 100.0))
+		label.text = "%s %d%%" % [ultimate_name, int(round((charge / max_charge) * 100.0))]
 
 
 func set_round(round_number: int) -> void:
