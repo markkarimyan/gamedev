@@ -52,6 +52,10 @@ Match controls:
 - First to 3 rounds wins
 - Win screen with restart/menu options
 
+## Playtesting
+
+- `docs/ultimate-prototype-playtest-checklist.md`: focused manual validation for ultimate charge, cinematic freeze, car sweep, coffee overdrive, cleanup, and existing match flow.
+
 ## Project Structure
 
 - `scenes/MainMenu.tscn`: title screen and controls info
