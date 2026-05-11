@@ -15,7 +15,8 @@ var car_parts: Array[CanvasItem] = []
 @onready var warning: ColorRect = %Warning
 
 func _ready() -> void:
-	add_to_group("player_1_car_ultimate")
+	add_to_group("car_ultimate")
+	add_to_group("player_%d_car_ultimate" % owner_id)
 	for child in get_children():
 		if child is CanvasItem and child != warning:
 			car_parts.append(child)

@@ -11,10 +11,10 @@ func _initialize() -> void:
 	await _test_ultimate_readiness_reset_and_activation_gate()
 	await _test_ultimate_activation_runs_match_cinematic_freeze()
 	await _test_bullets_pause_during_match_cinematic_freeze()
-	await _test_player_1_car_ultimate_sweeps_after_cinematic()
-	await _test_player_2_coffee_overdrive_starts_after_drink_cinematic()
-	await _test_player_2_coffee_overdrive_buffs_then_crashes()
-	await _test_player_2_coffee_modifiers_clear_on_round_reset()
+	await _test_player_2_car_ultimate_sweeps_after_cinematic()
+	await _test_player_1_coffee_overdrive_starts_after_drink_cinematic()
+	await _test_player_1_coffee_overdrive_buffs_then_crashes()
+	await _test_player_1_coffee_modifiers_clear_on_round_reset()
 	_finish()
 
 
@@ -145,7 +145,7 @@ func _test_bullets_pause_during_match_cinematic_freeze() -> void:
 	await process_frame
 
 
-func _test_player_1_car_ultimate_sweeps_after_cinematic() -> void:
+func _test_player_2_car_ultimate_sweeps_after_cinematic() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
@@ -153,113 +153,113 @@ func _test_player_1_car_ultimate_sweeps_after_cinematic() -> void:
 	var player_1: Player = game.get_node("%Player1")
 	var player_2: Player = game.get_node("%Player2")
 	player_1.global_position = Vector2(280, 448)
-	player_1.facing = 1
+	player_1.invulnerable_left = 0.0
 	player_2.global_position = Vector2(640, 448)
-	player_2.invulnerable_left = 0.0
-	var player_1_health := player_1.health
-	var player_2_start_x := player_2.global_position.x
+	player_2.facing = -1
+	var player_2_health := player_2.health
+	var player_1_start_x := player_1.global_position.x
 
-	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
-	game._unhandled_input(_key_press(KEY_G))
+	player_2.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	game._unhandled_input(_key_press(KEY_SHIFT))
 
 	await _wait_seconds(0.5)
-	_assert_true(player_2.health == Player.MAX_HEALTH, "Player 1 car ultimate cannot hit during cinematic setup")
-	var car_nodes := game.get_tree().get_nodes_in_group("player_1_car_ultimate")
-	_assert_true(car_nodes.size() == 1, "Player 1 car ultimate telegraphs after cinematic setup")
+	_assert_true(player_1.health == Player.MAX_HEALTH, "Player 2 car ultimate cannot hit during cinematic setup")
+	var car_nodes := game.get_tree().get_nodes_in_group("player_2_car_ultimate")
+	_assert_true(car_nodes.size() == 1, "Player 2 car ultimate telegraphs after cinematic setup")
 	if car_nodes.is_empty():
 		game.queue_free()
 		await process_frame
 		return
-	var car: Node2D = game.get_tree().get_first_node_in_group("player_1_car_ultimate")
+	var car: Node2D = game.get_tree().get_first_node_in_group("player_2_car_ultimate")
 	var starting_x := car.global_position.x
-	_assert_true(starting_x < 0.0, "Player 1 car ultimate starts off-screen in the facing direction")
+	_assert_true(starting_x > 960.0, "Player 2 car ultimate starts off-screen in the facing direction")
 
 	await _wait_seconds(1.35)
-	_assert_true(car.global_position.x > starting_x, "Player 1 car ultimate travels horizontally with Player 1 facing")
-	_assert_true(player_2.health <= Player.MAX_HEALTH - 35, "Player 1 car ultimate deals heavy damage to Player 2")
-	_assert_true(player_2.global_position.x > player_2_start_x + 20.0, "Player 1 car ultimate knocks Player 2 in the sweep direction")
-	_assert_true(player_1.health == player_1_health, "Player 1 car ultimate ignores Player 1")
+	_assert_true(car.global_position.x < starting_x, "Player 2 car ultimate travels horizontally with Player 2 facing")
+	_assert_true(player_1.health <= Player.MAX_HEALTH - 35, "Player 2 car ultimate deals heavy damage to Player 1")
+	_assert_true(player_1.global_position.x < player_1_start_x - 20.0, "Player 2 car ultimate knocks Player 1 in the sweep direction")
+	_assert_true(player_2.health == player_2_health, "Player 2 car ultimate ignores Player 2")
 
 	await _wait_seconds(1.2)
 	await process_frame
-	_assert_true(game.get_tree().get_nodes_in_group("player_1_car_ultimate").is_empty(), "Player 1 car ultimate cleans itself up after the sweep")
+	_assert_true(game.get_tree().get_nodes_in_group("player_2_car_ultimate").is_empty(), "Player 2 car ultimate cleans itself up after the sweep")
 
 	game.queue_free()
 	await process_frame
 
 
-func _test_player_2_coffee_overdrive_starts_after_drink_cinematic() -> void:
+func _test_player_1_coffee_overdrive_starts_after_drink_cinematic() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
 
-	var player_2: Player = game.get_node("%Player2")
-	player_2.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
-	game._unhandled_input(_key_press(KEY_SHIFT))
+	var player_1: Player = game.get_node("%Player1")
+	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	game._unhandled_input(_key_press(KEY_G))
 
-	_assert_true(game.is_match_cinematic_frozen(), "Player 2 coffee ultimate starts with a drink cinematic freeze")
-	_assert_true(not player_2.is_coffee_overdrive_active(), "Player 2 coffee overdrive waits until the drink cinematic ends")
+	_assert_true(game.is_match_cinematic_frozen(), "Player 1 coffee ultimate starts with a drink cinematic freeze")
+	_assert_true(not player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive waits until the drink cinematic ends")
 
 	await _wait_seconds(0.5)
-	_assert_true(not game.is_match_cinematic_frozen(), "Player 2 coffee drink cinematic finishes before overdrive")
-	_assert_true(player_2.is_coffee_overdrive_active(), "Player 2 coffee overdrive begins after the drink cinematic")
+	_assert_true(not game.is_match_cinematic_frozen(), "Player 1 coffee drink cinematic finishes before overdrive")
+	_assert_true(player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive begins after the drink cinematic")
 
 	game.queue_free()
 	await process_frame
 
 
-func _test_player_2_coffee_overdrive_buffs_then_crashes() -> void:
+func _test_player_1_coffee_overdrive_buffs_then_crashes() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
 
-	var player_2: Player = game.get_node("%Player2")
-	var normal_speed := player_2.current_movement_speed()
-	var normal_jump := player_2.current_jump_velocity()
-	var normal_cooldown := player_2.current_weapon_cooldown()
-	var normal_damage := player_2.weapon_damage
+	var player_1: Player = game.get_node("%Player1")
+	var normal_speed := player_1.current_movement_speed()
+	var normal_jump := player_1.current_jump_velocity()
+	var normal_cooldown := player_1.current_weapon_cooldown()
+	var normal_damage := player_1.weapon_damage
 
-	player_2.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
-	game._unhandled_input(_key_press(KEY_SHIFT))
+	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	game._unhandled_input(_key_press(KEY_G))
 	await _wait_seconds(0.5)
 
-	_assert_true(player_2.current_movement_speed() > normal_speed, "Player 2 coffee overdrive increases movement speed")
-	_assert_true(player_2.current_jump_velocity() < normal_jump, "Player 2 coffee overdrive strengthens jumping")
-	_assert_true(player_2.current_weapon_cooldown() < normal_cooldown, "Player 2 coffee overdrive increases shooting rate")
-	_assert_true(player_2.weapon_damage == normal_damage, "Player 2 coffee overdrive does not add a damage multiplier")
-	_assert_true(player_2.invulnerable_left <= 0.0, "Player 2 coffee overdrive does not add invincibility")
+	_assert_true(player_1.current_movement_speed() > normal_speed, "Player 1 coffee overdrive increases movement speed")
+	_assert_true(player_1.current_jump_velocity() < normal_jump, "Player 1 coffee overdrive strengthens jumping")
+	_assert_true(player_1.current_weapon_cooldown() < normal_cooldown, "Player 1 coffee overdrive increases shooting rate")
+	_assert_true(player_1.weapon_damage == normal_damage, "Player 1 coffee overdrive does not add a damage multiplier")
+	_assert_true(player_1.invulnerable_left <= 0.0, "Player 1 coffee overdrive does not add invincibility")
 
 	await _wait_seconds(Player.COFFEE_OVERDRIVE_SECONDS + 0.1)
-	_assert_true(not player_2.is_coffee_overdrive_active(), "Player 2 coffee overdrive expires")
-	_assert_true(player_2.is_coffee_crashing(), "Player 2 coffee overdrive enters a crash state")
-	_assert_true(player_2.current_movement_speed() < normal_speed, "Player 2 coffee crash reduces movement speed")
-	_assert_true(player_2.current_jump_velocity() == normal_jump, "Player 2 coffee crash cleans up jump strength")
-	_assert_true(player_2.current_weapon_cooldown() == normal_cooldown, "Player 2 coffee crash cleans up shooting rate")
+	_assert_true(not player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive expires")
+	_assert_true(player_1.is_coffee_crashing(), "Player 1 coffee overdrive enters a crash state")
+	_assert_true(player_1.current_movement_speed() < normal_speed, "Player 1 coffee crash reduces movement speed")
+	_assert_true(player_1.current_jump_velocity() == normal_jump, "Player 1 coffee crash cleans up jump strength")
+	_assert_true(player_1.current_weapon_cooldown() == normal_cooldown, "Player 1 coffee crash cleans up shooting rate")
 
 	await _wait_seconds(Player.COFFEE_CRASH_SECONDS + 0.1)
-	_assert_true(not player_2.is_coffee_crashing(), "Player 2 coffee crash expires")
-	_assert_true(player_2.current_movement_speed() == normal_speed, "Player 2 coffee modifiers clean up after crash")
+	_assert_true(not player_1.is_coffee_crashing(), "Player 1 coffee crash expires")
+	_assert_true(player_1.current_movement_speed() == normal_speed, "Player 1 coffee modifiers clean up after crash")
 
 	game.queue_free()
 	await process_frame
 
 
-func _test_player_2_coffee_modifiers_clear_on_round_reset() -> void:
+func _test_player_1_coffee_modifiers_clear_on_round_reset() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
 
-	var player_2: Player = game.get_node("%Player2")
-	var normal_speed := player_2.current_movement_speed()
-	player_2.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
-	game._unhandled_input(_key_press(KEY_SHIFT))
+	var player_1: Player = game.get_node("%Player1")
+	var normal_speed := player_1.current_movement_speed()
+	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	game._unhandled_input(_key_press(KEY_G))
 	await _wait_seconds(0.5)
-	_assert_true(player_2.is_coffee_overdrive_active(), "Player 2 coffee overdrive is active before reset cleanup")
+	_assert_true(player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive is active before reset cleanup")
 
-	player_2.reset_for_round(player_2.global_position)
-	_assert_true(not player_2.is_coffee_overdrive_active(), "Player 2 coffee overdrive clears on round reset")
-	_assert_true(not player_2.is_coffee_crashing(), "Player 2 coffee crash clears on round reset")
-	_assert_true(player_2.current_movement_speed() == normal_speed, "Player 2 coffee movement modifier clears on round reset")
+	player_1.reset_for_round(player_1.global_position)
+	_assert_true(not player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive clears on round reset")
+	_assert_true(not player_1.is_coffee_crashing(), "Player 1 coffee crash clears on round reset")
+	_assert_true(player_1.current_movement_speed() == normal_speed, "Player 1 coffee movement modifier clears on round reset")
 
 	game.queue_free()
 	await process_frame

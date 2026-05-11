@@ -55,7 +55,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_round() -> void:
 	_set_match_cinematic_frozen(false)
-	_clear_player_1_car_ultimates()
+	_clear_car_ultimates()
 	round_active = true
 	hud.set_round(round_number)
 	hud.set_scores(score_1, score_2, TARGET_SCORE)
@@ -116,25 +116,25 @@ func _finish_ultimate_cinematic(player_id: int) -> void:
 		_set_match_cinematic_frozen(false)
 		ultimate_cinematic_finished.emit(player_id)
 		if round_active and player_id == 1:
-			_spawn_player_1_car_ultimate()
+			player_1.start_coffee_overdrive()
 		elif round_active and player_id == 2:
-			player_2.start_coffee_overdrive()
+			_spawn_car_ultimate(player_2)
 
 
 func _on_player_ultimate_activated(player_id: int) -> void:
 	start_ultimate_cinematic(player_id)
 
 
-func _spawn_player_1_car_ultimate() -> void:
+func _spawn_car_ultimate(player: Player) -> void:
 	var car := CAR_ULTIMATE_SCENE.instantiate()
-	car.owner_id = player_1.player_id
-	car.direction = player_1.facing
-	car.global_position = Vector2(-170.0 if player_1.facing > 0 else 1130.0, player_1.global_position.y - 42.0)
+	car.owner_id = player.player_id
+	car.direction = player.facing
+	car.global_position = Vector2(-170.0 if player.facing > 0 else 1130.0, player.global_position.y - 42.0)
 	add_child(car)
 
 
-func _clear_player_1_car_ultimates() -> void:
-	for car in get_tree().get_nodes_in_group("player_1_car_ultimate"):
+func _clear_car_ultimates() -> void:
+	for car in get_tree().get_nodes_in_group("car_ultimate"):
 		if car.is_inside_tree() and car.get_parent() == self:
 			car.queue_free()
 
@@ -183,7 +183,7 @@ func _on_player_defeated(loser_id: int) -> void:
 	if not round_active:
 		return
 	_set_match_cinematic_frozen(false)
-	_clear_player_1_car_ultimates()
+	_clear_car_ultimates()
 	round_active = false
 	player_1.controls_enabled = false
 	player_2.controls_enabled = false

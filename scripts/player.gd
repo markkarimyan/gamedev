@@ -150,8 +150,6 @@ func try_activate_ultimate() -> bool:
 
 
 func start_coffee_overdrive() -> void:
-	if player_id != 2:
-		return
 	coffee_overdrive_left = COFFEE_OVERDRIVE_SECONDS
 	coffee_crash_left = 0.0
 
