@@ -24,8 +24,7 @@ func _initialize() -> void:
 	await _test_authored_arena_platforms_match_collision_and_clear_spawns()
 	await _test_match_randomizes_authored_arenas_between_rounds()
 	await _test_campus_courtyard_starter_arena_is_fair_and_readable()
-	await _test_cafeteria_arena_is_available_for_random_rounds()
-	await _test_cafeteria_arena_is_fair_and_readable()
+	await _test_cafeteria_arena_is_available_fair_and_readable()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -63,7 +62,7 @@ func _test_player_sprite_feet_align_with_collision_feet() -> void:
 
 	for player: Player in [game.get_node("%Player1"), game.get_node("%Player2")]:
 		var full_sprite: Sprite2D = player.get_node("%FullSprite")
-		var sprite_bottom := full_sprite.global_position.y + full_sprite.texture.get_height() * full_sprite.scale.y * 0.5
+		var sprite_bottom := full_sprite.global_position.y + full_sprite.get_rect().end.y * full_sprite.scale.y
 		_assert_true(absf(sprite_bottom - player.global_position.y) <= 1.0, "Player %d sprite feet align with collision feet" % player.player_id)
 
 	game.queue_free()
@@ -145,7 +144,7 @@ func _test_campus_courtyard_starter_arena_is_fair_and_readable() -> void:
 	await process_frame
 
 
-func _test_cafeteria_arena_is_available_for_random_rounds() -> void:
+func _test_cafeteria_arena_is_available_fair_and_readable() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
@@ -153,13 +152,11 @@ func _test_cafeteria_arena_is_available_for_random_rounds() -> void:
 	var arena_paths: Array[String] = []
 	for arena_scene: PackedScene in game.ARENA_SCENES:
 		arena_paths.append(arena_scene.resource_path)
-	_assert_true("res://scenes/arenas/CafeteriaArena.tscn" in arena_paths, "Campus cafeteria arena appears in the random arena pool")
+	_assert_true(CAFETERIA_SCENE.resource_path in arena_paths, "Campus cafeteria arena appears in the random arena pool")
 
 	game.queue_free()
 	await process_frame
 
-
-func _test_cafeteria_arena_is_fair_and_readable() -> void:
 	var arena := CAFETERIA_SCENE.instantiate()
 	root.add_child(arena)
 	await process_frame
