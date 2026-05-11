@@ -7,6 +7,7 @@ var _failures := 0
 
 func _initialize() -> void:
 	await _test_arena_uses_authored_reusable_structure()
+	await _test_match_randomizes_authored_arenas_between_rounds()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -33,6 +34,35 @@ func _test_arena_uses_authored_reusable_structure() -> void:
 	_assert_true(game.get_node("%Player1").start_position == arena.get_node("Spawns/P1Spawn").global_position, "Player 1 round reset uses the authored arena spawn")
 	_assert_true(game.get_node("%Player2").start_position == arena.get_node("Spawns/P2Spawn").global_position, "Player 2 round reset uses the authored arena spawn")
 
+	game.queue_free()
+	await process_frame
+
+
+func _test_match_randomizes_authored_arenas_between_rounds() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var first_arena: Node = game.get_node("%Arena")
+	var player_1: Player = game.get_node("%Player1")
+	var player_2: Player = game.get_node("%Player2")
+	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	player_2.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+
+	game.round_number = 2
+	game._start_round(true)
+
+	var next_arena: Node = game.get_node("%Arena")
+	_assert_true(next_arena != first_arena, "Round reset can swap in a different authored arena")
+	_assert_true(next_arena.has_node("Background"), "Selected arena updates the background container")
+	_assert_true(next_arena.has_node("GameplayGeometry/Platforms"), "Selected arena updates authored platforms")
+	_assert_true(next_arena.has_node("Pickups"), "Selected arena updates authored pickups")
+	_assert_true(player_1.start_position == next_arena.get_node("Spawns/P1Spawn").global_position, "Player 1 respawns at the selected arena spawn")
+	_assert_true(player_2.start_position == next_arena.get_node("Spawns/P2Spawn").global_position, "Player 2 respawns at the selected arena spawn")
+	_assert_true(player_1.ultimate_charge == 0.0 and player_2.ultimate_charge == 0.0, "Ultimate charge resets when a new arena is selected")
+	_assert_true(game.score_1 == 0 and game.score_2 == 0 and game.round_number == 2, "Arena swaps preserve score progression and round number")
+
+	await process_frame
 	game.queue_free()
 	await process_frame
 

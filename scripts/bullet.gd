@@ -17,6 +17,7 @@ var age := 0.0
 
 func _ready() -> void:
 	add_to_group("cinematic_freeze_pauses")
+	add_to_group("round_projectiles")
 	body_entered.connect(_on_body_entered)
 	visual.scale.x = direction
 	core.scale.x = direction

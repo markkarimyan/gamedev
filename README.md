@@ -36,6 +36,7 @@ Match controls:
 
 - Main menu
 - One-screen arena
+- Randomized hand-built arenas between rounds
 - Two local players
 - Movement, jumping, gun shooting
 - Double jump
@@ -60,7 +61,7 @@ Match controls:
 
 - `scenes/MainMenu.tscn`: title screen and controls info
 - `scenes/Game.tscn`: match scene that composes the arena, players, and HUD
-- `scenes/arenas/CampusArena.tscn`: reusable hand-built arena with background, gameplay geometry, spawns, pickups, and a future gimmick placeholder
+- `scenes/arenas/*.tscn`: reusable hand-built arenas with backgrounds, gameplay geometry, spawns, pickups, and future gimmick placeholders
 - `scenes/Player.tscn`: reusable fighter scene
 - `scenes/HUD.tscn`: health bars, scores, round display
 - `scenes/WinScreen.tscn`: final match winner screen

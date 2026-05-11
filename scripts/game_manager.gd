@@ -7,6 +7,11 @@ const TARGET_SCORE := 3
 const ULTIMATE_CHARGE_PER_SECOND := 4.0
 const ULTIMATE_CINEMATIC_SECONDS := 0.45
 const CAR_ULTIMATE_SCENE := preload("res://scenes/CarUltimate.tscn")
+const ARENA_SCENES: Array[PackedScene] = [
+	preload("res://scenes/arenas/CampusArena.tscn"),
+	preload("res://scenes/arenas/CourtyardArena.tscn"),
+	preload("res://scenes/arenas/RooftopArena.tscn"),
+]
 
 var score_1 := 0
 var score_2 := 0
@@ -14,16 +19,20 @@ var round_number := 1
 var round_active := true
 var cinematic_freeze_active := false
 var cinematic_player_id := 0
+var current_arena_scene_index := 0
+var _arena_rng := RandomNumberGenerator.new()
 var _frozen_physics_nodes: Array[Node] = []
 
 @onready var player_1 = %Player1
 @onready var player_2 = %Player2
 @onready var hud = %HUD
 @onready var arena: Node2D = %Arena
-@onready var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
-@onready var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
+@onready var p1_spawn: Marker2D
+@onready var p2_spawn: Marker2D
 
 func _ready() -> void:
+	_arena_rng.randomize()
+	_sync_spawn_markers()
 	player_1.health_changed.connect(_on_player_health_changed)
 	player_2.health_changed.connect(_on_player_health_changed)
 	player_1.ultimate_charge_changed.connect(_on_player_ultimate_charge_changed)
@@ -32,7 +41,7 @@ func _ready() -> void:
 	player_2.ultimate_activated.connect(_on_player_ultimate_activated)
 	player_1.defeated.connect(_on_player_defeated)
 	player_2.defeated.connect(_on_player_defeated)
-	_start_round()
+	_start_round(false)
 
 
 func _process(delta: float) -> void:
@@ -54,15 +63,52 @@ func _unhandled_input(event: InputEvent) -> void:
 			player_2.try_activate_ultimate()
 
 
-func _start_round() -> void:
+func _start_round(should_randomize_arena := false) -> void:
 	_set_match_cinematic_frozen(false)
 	_clear_car_ultimates()
+	_clear_round_projectiles()
+	if should_randomize_arena:
+		_load_random_arena()
+	_sync_spawn_markers()
 	round_active = true
 	hud.set_round(round_number)
 	hud.set_scores(score_1, score_2, TARGET_SCORE)
 	hud.clear_message()
 	player_1.reset_for_round(p1_spawn.global_position)
 	player_2.reset_for_round(p2_spawn.global_position)
+
+
+func _load_random_arena() -> void:
+	if ARENA_SCENES.size() <= 1:
+		return
+
+	var next_arena_scene_index := current_arena_scene_index
+	while next_arena_scene_index == current_arena_scene_index:
+		next_arena_scene_index = _arena_rng.randi_range(0, ARENA_SCENES.size() - 1)
+	_load_arena(next_arena_scene_index)
+
+
+func _load_arena(arena_scene_index: int) -> void:
+	if arena_scene_index < 0 or arena_scene_index >= ARENA_SCENES.size():
+		return
+
+	var old_arena := arena
+	arena = ARENA_SCENES[arena_scene_index].instantiate()
+	arena.name = "Arena"
+	if old_arena != null and old_arena.is_inside_tree():
+		old_arena.unique_name_in_owner = false
+		old_arena.name = "PreviousArena"
+		old_arena.queue_free()
+	add_child(arena)
+	arena.owner = self
+	arena.unique_name_in_owner = true
+	move_child(arena, 0)
+	current_arena_scene_index = arena_scene_index
+
+
+func _sync_spawn_markers() -> void:
+	p1_spawn = arena.get_node("Spawns/P1Spawn")
+	p2_spawn = arena.get_node("Spawns/P2Spawn")
 
 
 func _on_player_health_changed(player_id: int, health: int, max_health: int) -> void:
@@ -140,6 +186,12 @@ func _clear_car_ultimates() -> void:
 			car.queue_free()
 
 
+func _clear_round_projectiles() -> void:
+	for projectile in get_tree().get_nodes_in_group("round_projectiles"):
+		if projectile.is_inside_tree() and projectile.get_parent() == self:
+			projectile.queue_free()
+
+
 func _set_match_cinematic_frozen(is_frozen: bool) -> void:
 	if cinematic_freeze_active == is_frozen:
 		return
@@ -204,4 +256,4 @@ func _on_player_defeated(loser_id: int) -> void:
 	else:
 		round_number += 1
 		await get_tree().create_timer(1.4).timeout
-		_start_round()
+		_start_round(true)
