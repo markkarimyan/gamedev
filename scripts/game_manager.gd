@@ -10,6 +10,7 @@ const CAR_ULTIMATE_SCENE := preload("res://scenes/CarUltimate.tscn")
 const ARENA_SCENES: Array[PackedScene] = [
 	preload("res://scenes/arenas/CampusArena.tscn"),
 	preload("res://scenes/arenas/CourtyardArena.tscn"),
+	preload("res://scenes/arenas/CafeteriaArena.tscn"),
 	preload("res://scenes/arenas/RooftopArena.tscn"),
 ]
 

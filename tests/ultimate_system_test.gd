@@ -3,9 +3,11 @@ extends SceneTree
 const GAME_SCENE := preload("res://scenes/Game.tscn")
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 const COURTYARD_SCENE := preload("res://scenes/arenas/CourtyardArena.tscn")
+const CAFETERIA_SCENE := preload("res://scenes/arenas/CafeteriaArena.tscn")
 const ARENA_SCENES: Array[PackedScene] = [
 	preload("res://scenes/arenas/CampusArena.tscn"),
 	preload("res://scenes/arenas/CourtyardArena.tscn"),
+	preload("res://scenes/arenas/CafeteriaArena.tscn"),
 	preload("res://scenes/arenas/RooftopArena.tscn"),
 ]
 const PLAYER_COLLISION_SIZE := Vector2(42, 86)
@@ -22,6 +24,8 @@ func _initialize() -> void:
 	await _test_authored_arena_platforms_match_collision_and_clear_spawns()
 	await _test_match_randomizes_authored_arenas_between_rounds()
 	await _test_campus_courtyard_starter_arena_is_fair_and_readable()
+	await _test_cafeteria_arena_is_available_for_random_rounds()
+	await _test_cafeteria_arena_is_fair_and_readable()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -136,6 +140,48 @@ func _test_campus_courtyard_starter_arena_is_fair_and_readable() -> void:
 	var background: Node2D = arena.get_node("Background")
 	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformCenter"), ColorRect) as ColorRect
 	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Courtyard players, bullets, pickups, and ultimates remain readable over the background")
+
+	arena.queue_free()
+	await process_frame
+
+
+func _test_cafeteria_arena_is_available_for_random_rounds() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var arena_paths: Array[String] = []
+	for arena_scene: PackedScene in game.ARENA_SCENES:
+		arena_paths.append(arena_scene.resource_path)
+	_assert_true("res://scenes/arenas/CafeteriaArena.tscn" in arena_paths, "Campus cafeteria arena appears in the random arena pool")
+
+	game.queue_free()
+	await process_frame
+
+
+func _test_cafeteria_arena_is_fair_and_readable() -> void:
+	var arena := CAFETERIA_SCENE.instantiate()
+	root.add_child(arena)
+	await process_frame
+
+	_assert_true(arena.has_node("Background/CafeteriaLandmarks/MenuBoard"), "Cafeteria arena has readable campus cafeteria decorative art")
+	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Cafeteria arena keeps platforms in authored gameplay geometry")
+
+	var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
+	var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
+	_assert_true(absf((p1_spawn.position.x + p2_spawn.position.x) - 960.0) <= 1.0 and p1_spawn.position.y == p2_spawn.position.y, "Cafeteria spawn positions are mirrored and fair")
+
+	var pickups: Node2D = arena.get_node("Pickups")
+	var famas: Node2D = pickups.get_node("FamasPickup")
+	var ak: Node2D = pickups.get_node("AkPickup")
+	_assert_true(absf((famas.position.x + ak.position.x) - 960.0) <= 1.0 and famas.position.y == ak.position.y, "Cafeteria weapon pickups are mirrored and predictable")
+	_assert_true(pickups.has_node("RapidPickup") and pickups.has_node("MedkitPickup"), "Cafeteria center pickups are predictable and readable")
+	_assert_true(pickups.z_index >= 5, "Cafeteria pickups render above the background")
+	_assert_true(arena.get_node("FutureGimmick").get_child_count() == 1 and arena.has_node("FutureGimmick/MysteryLunchSpill"), "Cafeteria arena keeps the baseline to one readable lunch spill gimmick")
+
+	var background: Node2D = arena.get_node("Background")
+	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformServingCounter"), ColorRect) as ColorRect
+	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Cafeteria players, bullets, pickups, and ultimates remain readable over the background")
 
 	arena.queue_free()
 	await process_frame
