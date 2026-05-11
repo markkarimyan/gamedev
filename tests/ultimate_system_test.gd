@@ -2,6 +2,7 @@ extends SceneTree
 
 const GAME_SCENE := preload("res://scenes/Game.tscn")
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
+const PICKUP_SCENE := preload("res://scenes/Pickup.tscn")
 const COURTYARD_SCENE := preload("res://scenes/arenas/CourtyardArena.tscn")
 const CAFETERIA_SCENE := preload("res://scenes/arenas/CafeteriaArena.tscn")
 const ROOFTOP_SCENE := preload("res://scenes/arenas/RooftopArena.tscn")
@@ -36,6 +37,8 @@ func _initialize() -> void:
 	await _test_player_1_coffee_overdrive_starts_after_drink_cinematic()
 	await _test_player_1_coffee_overdrive_buffs_then_crashes()
 	await _test_player_1_coffee_modifiers_clear_on_round_reset()
+	await _test_cram_notes_pickup_temporarily_boosts_movement_and_resets()
+	await _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pickups()
 	_finish()
 
 
@@ -500,6 +503,77 @@ func _test_player_1_coffee_modifiers_clear_on_round_reset() -> void:
 	_assert_true(not player_1.is_coffee_overdrive_active(), "Player 1 coffee overdrive clears on round reset")
 	_assert_true(not player_1.is_coffee_crashing(), "Player 1 coffee crash clears on round reset")
 	_assert_true(player_1.current_movement_speed() == normal_speed, "Player 1 coffee movement modifier clears on round reset")
+
+	game.queue_free()
+	await process_frame
+
+
+func _test_cram_notes_pickup_temporarily_boosts_movement_and_resets() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var player_1: Player = game.get_node("%Player1")
+	var normal_speed := player_1.current_movement_speed()
+
+	player_1.collect_pickup("cram_notes")
+	_assert_true(player_1.current_movement_speed() > normal_speed, "Cram notes pickup temporarily boosts movement speed")
+
+	await _wait_seconds(Player.CRAM_NOTES_SECONDS + 0.1)
+	_assert_true(player_1.current_movement_speed() == normal_speed, "Cram notes pickup expires back to normal movement speed")
+
+	player_1.collect_pickup("cram_notes")
+	_assert_true(player_1.current_movement_speed() > normal_speed, "Cram notes pickup can be collected again before round reset")
+	player_1.reset_for_round(player_1.global_position)
+	_assert_true(player_1.current_movement_speed() == normal_speed, "Cram notes pickup clears on round reset")
+
+	game.queue_free()
+	await process_frame
+
+
+func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pickups() -> void:
+	for arena_scene in ARENA_SCENES:
+		var arena := arena_scene.instantiate()
+		root.add_child(arena)
+		await process_frame
+
+		var pickups: Node2D = arena.get_node("Pickups")
+		_assert_true(pickups.has_node("CramNotesPickup"), "%s includes the cram notes pickup in the authored arena loop" % arena.name)
+		if pickups.has_node("CramNotesPickup"):
+			var cram_notes: Node = pickups.get_node("CramNotesPickup")
+			_assert_true(cram_notes.pickup_type == "cram_notes", "%s cram notes pickup uses the shared pickup model" % arena.name)
+			_assert_true(cram_notes.get_node("%Label").text == "A+", "%s cram notes pickup has a readable campus-comedy label" % arena.name)
+			_assert_true(cram_notes.get_node("%Icon").polygon.size() >= 4, "%s cram notes pickup has readable icon language" % arena.name)
+
+		arena.queue_free()
+		await process_frame
+
+	var pickup := PICKUP_SCENE.instantiate()
+	pickup.pickup_type = "cram_notes"
+	root.add_child(pickup)
+	await process_frame
+	_assert_true(pickup.get_node("%Label").text == "A+", "Reusable pickup scene renders cram notes label")
+	_assert_true(pickup.get_node("%BodyVisual").color.a == 1.0, "Reusable pickup scene keeps cram notes visible during combat")
+	pickup.queue_free()
+	await process_frame
+
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var player_1: Player = game.get_node("%Player1")
+	var starting_cooldown := player_1.weapon_cooldown
+	player_1.collect_pickup("ak")
+	_assert_true(player_1.weapon_name == "Russian AK", "Existing AK pickup still swaps weapons")
+	player_1.collect_pickup("famas")
+	_assert_true(player_1.weapon_name == "French FAMAS", "Existing FAMAS pickup still swaps weapons")
+	player_1.collect_pickup("rapid")
+	_assert_true(player_1.weapon_cooldown < starting_cooldown, "Existing rapid-fire pickup still lowers weapon cooldown")
+	player_1.collect_pickup("jump_boost")
+	_assert_true(player_1.max_jumps == 3, "Existing jump boost pickup still adds an extra jump")
+	player_1.take_hit(20, player_1.global_position + Vector2(100, 0))
+	player_1.collect_pickup("medkit")
+	_assert_true(player_1.health == Player.MAX_HEALTH, "Existing medkit pickup still heals")
 
 	game.queue_free()
 	await process_frame

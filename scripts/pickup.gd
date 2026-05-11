@@ -1,6 +1,6 @@
 extends Area2D
 
-@export_enum("famas", "ak", "rapid", "jump_boost", "medkit") var pickup_type := "rapid"
+@export_enum("famas", "ak", "rapid", "jump_boost", "medkit", "cram_notes") var pickup_type := "rapid"
 @export var respawn_time := 9.0
 
 @onready var label: Label = %Label
@@ -55,6 +55,10 @@ func _update_visuals() -> void:
 			label.text = "+"
 			body_visual.color = Color(1.0, 1.0, 1.0, 1.0)
 			icon.polygon = PackedVector2Array([Vector2(-4, -11), Vector2(4, -11), Vector2(4, -4), Vector2(11, -4), Vector2(11, 4), Vector2(4, 4), Vector2(4, 11), Vector2(-4, 11), Vector2(-4, 4), Vector2(-11, 4), Vector2(-11, -4), Vector2(-4, -4)])
+		"cram_notes":
+			label.text = "A+"
+			body_visual.color = Color(0.72, 0.36, 1.0, 1.0)
+			icon.polygon = PackedVector2Array([Vector2(-10, -12), Vector2(7, -12), Vector2(12, -7), Vector2(12, 11), Vector2(-10, 11), Vector2(-10, -12), Vector2(7, -12), Vector2(7, -7), Vector2(12, -7), Vector2(-6, -4), Vector2(6, -4), Vector2(-6, 1), Vector2(7, 1), Vector2(-6, 6), Vector2(4, 6)])
 
 
 func _find_match_root() -> Node:

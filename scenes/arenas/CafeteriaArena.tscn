@@ -136,6 +136,10 @@ pickup_type = "rapid"
 position = Vector2(480, 438)
 pickup_type = "medkit"
 
+[node name="CramNotesPickup" parent="Pickups" instance=ExtResource("2_pickup")]
+position = Vector2(480, 250)
+pickup_type = "cram_notes"
+
 [node name="FutureGimmick" type="Node2D" parent="."]
 
 [node name="MysteryLunchSpill" type="Node2D" parent="FutureGimmick"]

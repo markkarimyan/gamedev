@@ -176,6 +176,10 @@ pickup_type = "ak"
 position = Vector2(480, 438)
 pickup_type = "jump_boost"
 
+[node name="CramNotesPickup" parent="Pickups" instance=ExtResource("2_pickup")]
+position = Vector2(480, 297)
+pickup_type = "cram_notes"
+
 [node name="FutureGimmick" type="Node2D" parent="."]
 
 [node name="Placeholder" type="Marker2D" parent="FutureGimmick"]
