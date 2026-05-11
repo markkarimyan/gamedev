@@ -2,6 +2,7 @@ extends SceneTree
 
 const GAME_SCENE := preload("res://scenes/Game.tscn")
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
+const COURTYARD_SCENE := preload("res://scenes/arenas/CourtyardArena.tscn")
 const ARENA_SCENES: Array[PackedScene] = [
 	preload("res://scenes/arenas/CampusArena.tscn"),
 	preload("res://scenes/arenas/CourtyardArena.tscn"),
@@ -20,6 +21,7 @@ func _initialize() -> void:
 	await _test_player_sprite_feet_align_with_collision_feet()
 	await _test_authored_arena_platforms_match_collision_and_clear_spawns()
 	await _test_match_randomizes_authored_arenas_between_rounds()
+	await _test_campus_courtyard_starter_arena_is_fair_and_readable()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -97,6 +99,46 @@ func _test_authored_arena_platforms_match_collision_and_clear_spawns() -> void:
 
 		arena.queue_free()
 		await process_frame
+
+
+func _test_campus_courtyard_starter_arena_is_fair_and_readable() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var arena_paths: Array[String] = []
+	for arena_scene: PackedScene in game.ARENA_SCENES:
+		arena_paths.append(arena_scene.resource_path)
+	_assert_true(COURTYARD_SCENE.resource_path in arena_paths, "Campus courtyard arena appears in the random arena pool")
+
+	game.queue_free()
+	await process_frame
+
+	var arena := COURTYARD_SCENE.instantiate()
+	root.add_child(arena)
+	await process_frame
+
+	_assert_true(arena.has_node("Background/CourtyardLandmarks"), "Courtyard arena has campus courtyard decorative art separate from gameplay geometry")
+	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Courtyard arena keeps platforms in authored gameplay geometry")
+
+	var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
+	var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
+	_assert_true(absf((p1_spawn.position.x + p2_spawn.position.x) - 960.0) <= 1.0 and p1_spawn.position.y == p2_spawn.position.y, "Courtyard spawn positions are mirrored and fair")
+
+	var pickups: Node2D = arena.get_node("Pickups")
+	var famas: Node2D = pickups.get_node("FamasPickup")
+	var ak: Node2D = pickups.get_node("AkPickup")
+	_assert_true(absf((famas.position.x + ak.position.x) - 960.0) <= 1.0 and famas.position.y == ak.position.y, "Courtyard weapon pickups are mirrored and predictable")
+	_assert_true(pickups.has_node("RapidPickup") and pickups.has_node("JumpPickup"), "Courtyard center pickups are predictable and readable")
+	_assert_true(pickups.z_index >= 5, "Courtyard pickups render above the background")
+	_assert_true(arena.get_node("FutureGimmick").get_child_count() <= 1, "Courtyard arena keeps the baseline to no more than one readable gimmick")
+
+	var background: Node2D = arena.get_node("Background")
+	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformCenter"), ColorRect) as ColorRect
+	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Courtyard players, bullets, pickups, and ultimates remain readable over the background")
+
+	arena.queue_free()
+	await process_frame
 
 
 func _test_match_randomizes_authored_arenas_between_rounds() -> void:
