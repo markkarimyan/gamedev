@@ -11,6 +11,7 @@ func _initialize() -> void:
 	await _test_ultimate_readiness_reset_and_activation_gate()
 	await _test_ultimate_activation_runs_match_cinematic_freeze()
 	await _test_bullets_pause_during_match_cinematic_freeze()
+	await _test_player_1_car_ultimate_sweeps_after_cinematic()
 	_finish()
 
 
@@ -136,6 +137,49 @@ func _test_bullets_pause_during_match_cinematic_freeze() -> void:
 	await _wait_seconds(0.3)
 	await _process_seconds(0.1)
 	_assert_true(bullet.global_position.x > frozen_position.x, "Bullets resume after cinematic freeze")
+
+	game.queue_free()
+	await process_frame
+
+
+func _test_player_1_car_ultimate_sweeps_after_cinematic() -> void:
+	var game := GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+
+	var player_1: Player = game.get_node("%Player1")
+	var player_2: Player = game.get_node("%Player2")
+	player_1.global_position = Vector2(280, 448)
+	player_1.facing = 1
+	player_2.global_position = Vector2(640, 448)
+	player_2.invulnerable_left = 0.0
+	var player_1_health := player_1.health
+	var player_2_start_x := player_2.global_position.x
+
+	player_1.add_ultimate_charge(Player.MAX_ULTIMATE_CHARGE)
+	game._unhandled_input(_key_press(KEY_G))
+
+	await _wait_seconds(0.5)
+	_assert_true(player_2.health == Player.MAX_HEALTH, "Player 1 car ultimate cannot hit during cinematic setup")
+	var car_nodes := game.get_tree().get_nodes_in_group("player_1_car_ultimate")
+	_assert_true(car_nodes.size() == 1, "Player 1 car ultimate telegraphs after cinematic setup")
+	if car_nodes.is_empty():
+		game.queue_free()
+		await process_frame
+		return
+	var car: Node2D = game.get_tree().get_first_node_in_group("player_1_car_ultimate")
+	var starting_x := car.global_position.x
+	_assert_true(starting_x < 0.0, "Player 1 car ultimate starts off-screen in the facing direction")
+
+	await _wait_seconds(1.35)
+	_assert_true(car.global_position.x > starting_x, "Player 1 car ultimate travels horizontally with Player 1 facing")
+	_assert_true(player_2.health <= Player.MAX_HEALTH - 35, "Player 1 car ultimate deals heavy damage to Player 2")
+	_assert_true(player_2.global_position.x > player_2_start_x + 20.0, "Player 1 car ultimate knocks Player 2 in the sweep direction")
+	_assert_true(player_1.health == player_1_health, "Player 1 car ultimate ignores Player 1")
+
+	await _wait_seconds(1.2)
+	await process_frame
+	_assert_true(game.get_tree().get_nodes_in_group("player_1_car_ultimate").is_empty(), "Player 1 car ultimate cleans itself up after the sweep")
 
 	game.queue_free()
 	await process_frame

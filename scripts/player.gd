@@ -15,6 +15,7 @@ const JUMP_VELOCITY := -430.0
 const GRAVITY := 1200.0
 const SHOT_RECOIL_TIME := 0.12
 const INVULNERABLE_TIME := 0.45
+const KNOCKBACK_CONTROL_LOCK_TIME := 0.18
 const KNOCKBACK_FORCE := Vector2(330.0, -170.0)
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 
@@ -33,6 +34,7 @@ var jumps_left := 2
 var shoot_cooldown_left := 0.0
 var shot_recoil_left := 0.0
 var invulnerable_left := 0.0
+var knockback_left := 0.0
 var walk_frame_time := 0.0
 var jump_boost_left := 0.0
 var weapon_name := ""
@@ -70,7 +72,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 
 	var direction := _movement_direction()
-	if controls_enabled:
+	if controls_enabled and knockback_left <= 0.0:
 		velocity.x = direction * SPEED
 		if direction != 0:
 			facing = int(sign(direction))
@@ -103,6 +105,7 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	shoot_cooldown_left = 0.0
 	shot_recoil_left = 0.0
 	invulnerable_left = 0.0
+	knockback_left = 0.0
 	walk_frame_time = 0.0
 	jump_boost_left = 0.0
 	_set_muzzle_fire_visible(false)
@@ -155,6 +158,7 @@ func take_hit(damage: int, source_position: Vector2) -> bool:
 	if knockback_direction == 0.0:
 		knockback_direction = 1.0
 	velocity = Vector2(KNOCKBACK_FORCE.x * knockback_direction, KNOCKBACK_FORCE.y)
+	knockback_left = KNOCKBACK_CONTROL_LOCK_TIME
 	health_changed.emit(player_id, health, MAX_HEALTH)
 
 	if health <= 0:
@@ -181,6 +185,8 @@ func _tick_timers(delta: float) -> void:
 		full_sprite.modulate = Color(1.0, 1.0, 1.0, 0.45 if int(Time.get_ticks_msec() / 80) % 2 == 0 else 1.0)
 	else:
 		full_sprite.modulate = Color.WHITE
+	if knockback_left > 0.0:
+		knockback_left -= delta
 
 
 func _shoot() -> void:
