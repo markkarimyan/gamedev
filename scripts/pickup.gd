@@ -1,11 +1,21 @@
 extends Area2D
 
-@export_enum("famas", "ak", "rapid", "jump_boost", "medkit", "cram_notes") var pickup_type := "rapid"
+const FIRE_RATE_ICON := preload("res://assets/pickups/fire_rate_boost.png")
+const JUMP_BOOST_ICON := preload("res://assets/pickups/jump_boost.png")
+const DAMAGE_BOOST_ICON := preload("res://assets/pickups/damage_boost.png")
+const MEDKIT_ICON := preload("res://assets/pickups/medkit.png")
+
+@export_enum("rapid", "jump_boost", "medkit", "damage_boost") var pickup_type := "rapid"
 @export var respawn_time := 9.0
 
 @onready var label: Label = %Label
 @onready var body_visual: Polygon2D = %BodyVisual
+@onready var top_line: Polygon2D = $TopLine
+@onready var shine: Polygon2D = $Shine
+@onready var icon_back: Polygon2D = $IconBack
 @onready var icon: Polygon2D = %Icon
+@onready var icon_texture: Sprite2D = %IconTexture
+@onready var icon_parts: Node2D = %IconParts
 @onready var collision_shape: CollisionShape2D = %CollisionShape2D
 
 func _ready() -> void:
@@ -34,31 +44,48 @@ func _hide_then_respawn() -> void:
 
 
 func _update_visuals() -> void:
+	icon.visible = false
+	icon_texture.visible = false
+	icon_texture.texture = null
+	label.visible = true
+	_set_card_visible(true)
+	_clear_icon_parts()
 	match pickup_type:
-		"famas":
-			label.text = "LB"
-			body_visual.color = Color(0.2, 0.62, 1.0, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-11, -4), Vector2(6, -4), Vector2(14, 1), Vector2(-2, 3), Vector2(-2, 8), Vector2(-8, 8), Vector2(-8, 3), Vector2(-11, 3)])
-		"ak":
-			label.text = "DC"
-			body_visual.color = Color(0.95, 0.22, 0.18, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-12, -3), Vector2(8, -5), Vector2(13, -1), Vector2(-4, 3), Vector2(-6, 8), Vector2(-11, 8), Vector2(-9, 3), Vector2(-12, 2)])
 		"rapid":
 			label.text = "RF"
 			body_visual.color = Color(1.0, 0.78, 0.18, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-12, 0), Vector2(-2, -9), Vector2(-4, -2), Vector2(12, -2), Vector2(0, 9), Vector2(3, 2)])
+			_use_texture_icon(FIRE_RATE_ICON)
 		"jump_boost":
 			label.text = "J+"
 			body_visual.color = Color(0.35, 1.0, 0.62, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-11, 6), Vector2(-4, -7), Vector2(0, -2), Vector2(5, -12), Vector2(12, 1), Vector2(6, -2), Vector2(2, 8), Vector2(-2, 1)])
+			_use_texture_icon(JUMP_BOOST_ICON)
 		"medkit":
 			label.text = "+"
 			body_visual.color = Color(1.0, 1.0, 1.0, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-4, -11), Vector2(4, -11), Vector2(4, -4), Vector2(11, -4), Vector2(11, 4), Vector2(4, 4), Vector2(4, 11), Vector2(-4, 11), Vector2(-4, 4), Vector2(-11, 4), Vector2(-11, -4), Vector2(-4, -4)])
-		"cram_notes":
-			label.text = "A+"
-			body_visual.color = Color(0.72, 0.36, 1.0, 1.0)
-			icon.polygon = PackedVector2Array([Vector2(-10, -12), Vector2(7, -12), Vector2(12, -7), Vector2(12, 11), Vector2(-10, 11), Vector2(-10, -12), Vector2(7, -12), Vector2(7, -7), Vector2(12, -7), Vector2(-6, -4), Vector2(6, -4), Vector2(-6, 1), Vector2(7, 1), Vector2(-6, 6), Vector2(4, 6)])
+			_use_texture_icon(MEDKIT_ICON)
+		"damage_boost":
+			label.text = "DMG"
+			body_visual.color = Color(1.0, 0.2, 0.08, 1.0)
+			_use_texture_icon(DAMAGE_BOOST_ICON)
+
+
+func _clear_icon_parts() -> void:
+	for child in icon_parts.get_children():
+		child.queue_free()
+
+
+func _use_texture_icon(texture: Texture2D) -> void:
+	label.visible = false
+	_set_card_visible(false)
+	icon_texture.texture = texture
+	icon_texture.visible = true
+
+
+func _set_card_visible(is_visible: bool) -> void:
+	body_visual.visible = is_visible
+	top_line.visible = is_visible
+	shine.visible = is_visible
+	icon_back.visible = is_visible
 
 
 func _find_match_root() -> Node:

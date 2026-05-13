@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://pixel_duel_car_ultimate"]
+[gd_scene load_steps=4 format=3 uid="uid://pixel_duel_car_ultimate"]
 
 [ext_resource type="Script" path="res://scripts/car_ultimate.gd" id="1_car_script"]
+[ext_resource type="Texture2D" path="res://assets/ultimates/car_ultimate.png" id="2_car_texture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_car"]
 size = Vector2(214, 82)
@@ -18,6 +19,11 @@ offset_top = -30.0
 offset_right = 1010.0
 offset_bottom = 30.0
 color = Color(1, 0.121569, 0.0784314, 0.34)
+
+[node name="CarSprite" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+scale = Vector2(0.31, 0.31)
+texture = ExtResource("2_car_texture")
 
 [node name="BodyPearl" type="Polygon2D" parent="."]
 unique_name_in_owner = true

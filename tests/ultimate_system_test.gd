@@ -3,14 +3,8 @@ extends SceneTree
 const GAME_SCENE := preload("res://scenes/Game.tscn")
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 const PICKUP_SCENE := preload("res://scenes/Pickup.tscn")
-const COURTYARD_SCENE := preload("res://scenes/arenas/CourtyardArena.tscn")
-const CAFETERIA_SCENE := preload("res://scenes/arenas/CafeteriaArena.tscn")
-const ROOFTOP_SCENE := preload("res://scenes/arenas/RooftopArena.tscn")
 const ARENA_SCENES: Array[PackedScene] = [
 	preload("res://scenes/arenas/CampusArena.tscn"),
-	preload("res://scenes/arenas/CourtyardArena.tscn"),
-	preload("res://scenes/arenas/CafeteriaArena.tscn"),
-	preload("res://scenes/arenas/RooftopArena.tscn"),
 ]
 const PLAYER_COLLISION_SIZE := Vector2(42, 86)
 const PLAYER_COLLISION_OFFSET := Vector2(0, -43)
@@ -24,10 +18,7 @@ func _initialize() -> void:
 	await _test_arena_uses_authored_reusable_structure()
 	await _test_player_sprite_feet_align_with_collision_feet()
 	await _test_authored_arena_platforms_match_collision_and_clear_spawns()
-	await _test_match_randomizes_authored_arenas_between_rounds()
-	await _test_campus_courtyard_starter_arena_is_fair_and_readable()
-	await _test_cafeteria_arena_is_available_fair_and_readable()
-	await _test_rooftop_arena_is_available_fair_and_readable()
+	await _test_match_keeps_main_arena_between_rounds()
 	await _test_players_gain_ultimate_charge_during_active_round()
 	await _test_players_gain_ultimate_charge_from_combat()
 	await _test_ultimate_readiness_reset_and_activation_gate()
@@ -37,8 +28,7 @@ func _initialize() -> void:
 	await _test_player_1_coffee_overdrive_starts_after_drink_cinematic()
 	await _test_player_1_coffee_overdrive_buffs_then_crashes()
 	await _test_player_1_coffee_modifiers_clear_on_round_reset()
-	await _test_cram_notes_pickup_temporarily_boosts_movement_and_resets()
-	await _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pickups()
+	await _test_remaining_pickups_are_readable_in_arena_loop()
 	await _test_public_facing_names_are_campus_parody_and_hud_readable()
 	_finish()
 
@@ -52,7 +42,7 @@ func _test_arena_uses_authored_reusable_structure() -> void:
 	_assert_true(arena.has_node("Background"), "Arena has a dedicated decorative background container")
 	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Arena has authored gameplay platform geometry")
 	_assert_true(arena.has_node("Spawns/P1Spawn") and arena.has_node("Spawns/P2Spawn"), "Arena exposes authored player spawn markers")
-	_assert_true(arena.has_node("Pickups/FamasPickup") and arena.has_node("Pickups/AkPickup") and arena.has_node("Pickups/JumpPickup"), "Arena keeps pickups in an authored pickup container")
+	_assert_true(arena.has_node("Pickups/RapidPickup") and arena.has_node("Pickups/JumpPickup") and arena.has_node("Pickups/MedkitPickup") and arena.has_node("Pickups/DamageBoostPickup"), "Arena keeps pickups in an authored pickup container")
 	_assert_true(arena.has_node("FutureGimmick/Placeholder"), "Arena reserves a place for a future arena gimmick")
 	_assert_true(game.get_node("%Player1").start_position == arena.get_node("Spawns/P1Spawn").global_position, "Player 1 round reset uses the authored arena spawn")
 	_assert_true(game.get_node("%Player2").start_position == arena.get_node("Spawns/P2Spawn").global_position, "Player 2 round reset uses the authored arena spawn")
@@ -110,130 +100,7 @@ func _test_authored_arena_platforms_match_collision_and_clear_spawns() -> void:
 		await process_frame
 
 
-func _test_campus_courtyard_starter_arena_is_fair_and_readable() -> void:
-	var game := GAME_SCENE.instantiate()
-	root.add_child(game)
-	await process_frame
-
-	var arena_paths: Array[String] = []
-	for arena_scene: PackedScene in game.ARENA_SCENES:
-		arena_paths.append(arena_scene.resource_path)
-	_assert_true(COURTYARD_SCENE.resource_path in arena_paths, "Campus courtyard arena appears in the random arena pool")
-
-	game.queue_free()
-	await process_frame
-
-	var arena := COURTYARD_SCENE.instantiate()
-	root.add_child(arena)
-	await process_frame
-
-	_assert_true(arena.has_node("Background/CourtyardLandmarks"), "Courtyard arena has campus courtyard decorative art separate from gameplay geometry")
-	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Courtyard arena keeps platforms in authored gameplay geometry")
-
-	var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
-	var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
-	_assert_true(absf((p1_spawn.position.x + p2_spawn.position.x) - 960.0) <= 1.0 and p1_spawn.position.y == p2_spawn.position.y, "Courtyard spawn positions are mirrored and fair")
-
-	var pickups: Node2D = arena.get_node("Pickups")
-	var famas: Node2D = pickups.get_node("FamasPickup")
-	var ak: Node2D = pickups.get_node("AkPickup")
-	_assert_true(absf((famas.position.x + ak.position.x) - 960.0) <= 1.0 and famas.position.y == ak.position.y, "Courtyard weapon pickups are mirrored and predictable")
-	_assert_true(pickups.has_node("RapidPickup") and pickups.has_node("JumpPickup"), "Courtyard center pickups are predictable and readable")
-	_assert_true(pickups.z_index >= 5, "Courtyard pickups render above the background")
-	_assert_true(arena.get_node("FutureGimmick").get_child_count() <= 1, "Courtyard arena keeps the baseline to no more than one readable gimmick")
-
-	var background: Node2D = arena.get_node("Background")
-	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformCenter"), ColorRect) as ColorRect
-	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Courtyard players, bullets, pickups, and ultimates remain readable over the background")
-
-	arena.queue_free()
-	await process_frame
-
-
-func _test_cafeteria_arena_is_available_fair_and_readable() -> void:
-	var game := GAME_SCENE.instantiate()
-	root.add_child(game)
-	await process_frame
-
-	var arena_paths: Array[String] = []
-	for arena_scene: PackedScene in game.ARENA_SCENES:
-		arena_paths.append(arena_scene.resource_path)
-	_assert_true(CAFETERIA_SCENE.resource_path in arena_paths, "Campus cafeteria arena appears in the random arena pool")
-
-	game.queue_free()
-	await process_frame
-
-	var arena := CAFETERIA_SCENE.instantiate()
-	root.add_child(arena)
-	await process_frame
-
-	var cafe_background: Sprite2D = arena.get_node("Background/PixelCafeBackground")
-	_assert_true(cafe_background.texture != null and cafe_background.texture.resource_path == "res://assets/cafeteria_background_pixel.png", "Cafeteria arena uses the coffee bar pixel background asset")
-	_assert_true(arena.has_node("Background/ReadabilityShade"), "Cafeteria arena keeps the photo background readable for combat")
-	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Cafeteria arena keeps platforms in authored gameplay geometry")
-
-	var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
-	var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
-	_assert_true(absf((p1_spawn.position.x + p2_spawn.position.x) - 960.0) <= 1.0 and p1_spawn.position.y == p2_spawn.position.y, "Cafeteria spawn positions are mirrored and fair")
-
-	var pickups: Node2D = arena.get_node("Pickups")
-	var famas: Node2D = pickups.get_node("FamasPickup")
-	var ak: Node2D = pickups.get_node("AkPickup")
-	_assert_true(absf((famas.position.x + ak.position.x) - 960.0) <= 1.0 and famas.position.y == ak.position.y, "Cafeteria weapon pickups are mirrored and predictable")
-	_assert_true(pickups.has_node("RapidPickup") and pickups.has_node("MedkitPickup"), "Cafeteria center pickups are predictable and readable")
-	_assert_true(pickups.z_index >= 5, "Cafeteria pickups render above the background")
-	_assert_true(arena.get_node("FutureGimmick").get_child_count() == 1 and arena.has_node("FutureGimmick/MysteryLunchSpill"), "Cafeteria arena keeps the baseline to one readable lunch spill gimmick")
-
-	var background: Node2D = arena.get_node("Background")
-	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformServingCounter"), ColorRect) as ColorRect
-	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Cafeteria players, bullets, pickups, and ultimates remain readable over the background")
-
-	arena.queue_free()
-	await process_frame
-
-
-func _test_rooftop_arena_is_available_fair_and_readable() -> void:
-	var game := GAME_SCENE.instantiate()
-	root.add_child(game)
-	await process_frame
-
-	var arena_paths: Array[String] = []
-	for arena_scene: PackedScene in game.ARENA_SCENES:
-		arena_paths.append(arena_scene.resource_path)
-	_assert_true(ROOFTOP_SCENE.resource_path in arena_paths, "Campus rooftop arena appears in the random arena pool")
-
-	game.queue_free()
-	await process_frame
-
-	var arena := ROOFTOP_SCENE.instantiate()
-	root.add_child(arena)
-	await process_frame
-
-	_assert_true(arena.has_node("Background/RooftopLandmarks"), "Rooftop arena has rooftop campus comedy art separate from gameplay geometry")
-	_assert_true(arena.has_node("Background/ReadabilityShade"), "Rooftop arena keeps the skyline background readable for combat")
-	_assert_true(arena.has_node("GameplayGeometry/Platforms"), "Rooftop arena keeps platforms in authored gameplay geometry")
-
-	var p1_spawn: Marker2D = arena.get_node("Spawns/P1Spawn")
-	var p2_spawn: Marker2D = arena.get_node("Spawns/P2Spawn")
-	_assert_true(absf((p1_spawn.position.x + p2_spawn.position.x) - 960.0) <= 1.0 and p1_spawn.position.y == p2_spawn.position.y, "Rooftop spawn positions are mirrored and fair")
-
-	var pickups: Node2D = arena.get_node("Pickups")
-	var famas: Node2D = pickups.get_node("FamasPickup")
-	var ak: Node2D = pickups.get_node("AkPickup")
-	_assert_true(absf((famas.position.x + ak.position.x) - 960.0) <= 1.0 and famas.position.y == ak.position.y, "Rooftop weapon pickups are mirrored and predictable")
-	_assert_true(pickups.has_node("RapidPickup") and pickups.has_node("JumpPickup"), "Rooftop center pickups are predictable and readable")
-	_assert_true(pickups.z_index >= 5, "Rooftop pickups render above the background")
-	_assert_true(arena.get_node("FutureGimmick").get_child_count() == 1 and arena.has_node("FutureGimmick/LooseExamPapers"), "Rooftop arena keeps the baseline to one readable exam-paper gust gimmick")
-
-	var background: Node2D = arena.get_node("Background")
-	var platform_visual := _first_child_of_type(arena.get_node("GameplayGeometry/Platforms/PlatformCenterRoofSign"), ColorRect) as ColorRect
-	_assert_true(background.z_index < 0 and platform_visual != null and platform_visual.color.a >= 0.85, "Rooftop players, bullets, pickups, and ultimates remain readable over the background")
-
-	arena.queue_free()
-	await process_frame
-
-
-func _test_match_randomizes_authored_arenas_between_rounds() -> void:
+func _test_match_keeps_main_arena_between_rounds() -> void:
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
 	await process_frame
@@ -248,14 +115,15 @@ func _test_match_randomizes_authored_arenas_between_rounds() -> void:
 	game._start_round(true)
 
 	var next_arena: Node = game.get_node("%Arena")
-	_assert_true(next_arena != first_arena, "Round reset can swap in a different authored arena")
-	_assert_true(next_arena.has_node("Background"), "Selected arena updates the background container")
-	_assert_true(next_arena.has_node("GameplayGeometry/Platforms"), "Selected arena updates authored platforms")
-	_assert_true(next_arena.has_node("Pickups"), "Selected arena updates authored pickups")
-	_assert_true(player_1.start_position == next_arena.get_node("Spawns/P1Spawn").global_position, "Player 1 respawns at the selected arena spawn")
-	_assert_true(player_2.start_position == next_arena.get_node("Spawns/P2Spawn").global_position, "Player 2 respawns at the selected arena spawn")
-	_assert_true(player_1.ultimate_charge == 0.0 and player_2.ultimate_charge == 0.0, "Ultimate charge resets when a new arena is selected")
-	_assert_true(game.score_1 == 0 and game.score_2 == 0 and game.round_number == 2, "Arena swaps preserve score progression and round number")
+	_assert_true(next_arena != first_arena, "Round reset refreshes the main arena instance")
+	_assert_true(next_arena.scene_file_path == "res://scenes/arenas/CampusArena.tscn", "Round reset keeps the match on the main Campus arena")
+	_assert_true(next_arena.has_node("Background"), "Main arena keeps the background container")
+	_assert_true(next_arena.has_node("GameplayGeometry/Platforms"), "Main arena keeps authored platforms")
+	_assert_true(next_arena.has_node("Pickups"), "Main arena keeps authored pickups")
+	_assert_true(player_1.start_position == next_arena.get_node("Spawns/P1Spawn").global_position, "Player 1 respawns at the main arena spawn")
+	_assert_true(player_2.start_position == next_arena.get_node("Spawns/P2Spawn").global_position, "Player 2 respawns at the main arena spawn")
+	_assert_true(player_1.ultimate_charge == 0.0 and player_2.ultimate_charge == 0.0, "Ultimate charge resets when the arena is refreshed")
+	_assert_true(game.score_1 == 0 and game.score_2 == 0 and game.round_number == 2, "Main arena refresh preserves score progression and round number")
 
 	await process_frame
 	game.queue_free()
@@ -509,54 +377,32 @@ func _test_player_1_coffee_modifiers_clear_on_round_reset() -> void:
 	await process_frame
 
 
-func _test_cram_notes_pickup_temporarily_boosts_movement_and_resets() -> void:
-	var game := GAME_SCENE.instantiate()
-	root.add_child(game)
-	await process_frame
-
-	var player_1: Player = game.get_node("%Player1")
-	var normal_speed := player_1.current_movement_speed()
-
-	player_1.collect_pickup("cram_notes")
-	_assert_true(player_1.current_movement_speed() > normal_speed, "Cram notes pickup temporarily boosts movement speed")
-
-	await _wait_seconds(Player.CRAM_NOTES_SECONDS + 0.1)
-	_assert_true(player_1.current_movement_speed() == normal_speed, "Cram notes pickup expires back to normal movement speed")
-
-	player_1.collect_pickup("cram_notes")
-	_assert_true(player_1.current_movement_speed() > normal_speed, "Cram notes pickup can be collected again before round reset")
-	player_1.reset_for_round(player_1.global_position)
-	_assert_true(player_1.current_movement_speed() == normal_speed, "Cram notes pickup clears on round reset")
-
-	game.queue_free()
-	await process_frame
-
-
-func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pickups() -> void:
+func _test_remaining_pickups_are_readable_in_arena_loop() -> void:
 	for arena_scene in ARENA_SCENES:
 		var arena := arena_scene.instantiate()
 		root.add_child(arena)
 		await process_frame
 
 		var pickups: Node2D = arena.get_node("Pickups")
-		_assert_true(pickups.has_node("CramNotesPickup"), "%s includes the cram notes pickup in the authored arena loop" % arena.name)
-		if pickups.has_node("CramNotesPickup"):
-			var cram_notes: Node = pickups.get_node("CramNotesPickup")
-			_assert_true(cram_notes.pickup_type == "cram_notes", "%s cram notes pickup uses the shared pickup model" % arena.name)
-			_assert_true(cram_notes.get_node("%Label").text == "A+", "%s cram notes pickup has a readable campus-comedy label" % arena.name)
-			_assert_true(cram_notes.get_node("%Icon").polygon.size() >= 4, "%s cram notes pickup has readable icon language" % arena.name)
+		_assert_true(pickups.has_node("RapidPickup"), "%s includes the fire rate pickup in the authored arena loop" % arena.name)
+		_assert_true(pickups.has_node("JumpPickup"), "%s includes the jump boost pickup in the authored arena loop" % arena.name)
+		_assert_true(pickups.has_node("MedkitPickup"), "%s includes the medkit pickup in the authored arena loop" % arena.name)
+		_assert_true(pickups.has_node("DamageBoostPickup"), "%s includes the damage boost pickup in the authored arena loop" % arena.name)
+		if pickups.has_node("RapidPickup"):
+			var rapid: Node = pickups.get_node("RapidPickup")
+			_assert_true(rapid.pickup_type == "rapid", "%s fire rate pickup uses the shared pickup model" % arena.name)
+		if pickups.has_node("JumpPickup"):
+			var jump_boost: Node = pickups.get_node("JumpPickup")
+			_assert_true(jump_boost.pickup_type == "jump_boost", "%s jump boost pickup uses the shared pickup model" % arena.name)
+		if pickups.has_node("MedkitPickup"):
+			var medkit: Node = pickups.get_node("MedkitPickup")
+			_assert_true(medkit.pickup_type == "medkit", "%s medkit pickup uses the shared pickup model" % arena.name)
+		if pickups.has_node("DamageBoostPickup"):
+			var damage_boost: Node = pickups.get_node("DamageBoostPickup")
+			_assert_true(damage_boost.pickup_type == "damage_boost", "%s damage boost pickup uses the shared pickup model" % arena.name)
 
 		arena.queue_free()
 		await process_frame
-
-	var pickup := PICKUP_SCENE.instantiate()
-	pickup.pickup_type = "cram_notes"
-	root.add_child(pickup)
-	await process_frame
-	_assert_true(pickup.get_node("%Label").text == "A+", "Reusable pickup scene renders cram notes label")
-	_assert_true(pickup.get_node("%BodyVisual").color.a == 1.0, "Reusable pickup scene keeps cram notes visible during combat")
-	pickup.queue_free()
-	await process_frame
 
 	var game := GAME_SCENE.instantiate()
 	root.add_child(game)
@@ -564,10 +410,6 @@ func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pi
 
 	var player_1: Player = game.get_node("%Player1")
 	var starting_cooldown := player_1.weapon_cooldown
-	player_1.collect_pickup("ak")
-	_assert_true(player_1.weapon_name == "Dorm-Room Clanker", "Existing heavy rifle pickup still swaps weapons")
-	player_1.collect_pickup("famas")
-	_assert_true(player_1.weapon_name == "Lab-Partner Blaster", "Existing fast rifle pickup still swaps weapons")
 	player_1.collect_pickup("rapid")
 	_assert_true(player_1.weapon_cooldown < starting_cooldown, "Existing rapid-fire pickup still lowers weapon cooldown")
 	player_1.collect_pickup("jump_boost")
@@ -575,6 +417,9 @@ func _test_cram_notes_pickup_is_readable_in_arena_loop_and_preserves_existing_pi
 	player_1.take_hit(20, player_1.global_position + Vector2(100, 0))
 	player_1.collect_pickup("medkit")
 	_assert_true(player_1.health == Player.MAX_HEALTH, "Existing medkit pickup still heals")
+	var normal_damage := player_1.current_weapon_damage()
+	player_1.collect_pickup("damage_boost")
+	_assert_true(player_1.current_weapon_damage() > normal_damage, "Damage boost pickup temporarily increases shot damage")
 
 	game.queue_free()
 	await process_frame
@@ -597,28 +442,11 @@ func _test_public_facing_names_are_campus_parody_and_hud_readable() -> void:
 	_assert_true(hud.get_node("%P2UltimateLabel").text == "Right Shift: Shuttle Sweep Ready", "HUD ready prompt includes Player 2 key and ultimate name")
 
 	var player_1: Player = game.get_node("%Player1")
-	player_1.collect_pickup("famas")
-	_assert_true(player_1.weapon_name == "Lab-Partner Blaster", "Fast rifle pickup uses campus parody naming")
-	player_1.collect_pickup("ak")
-	_assert_true(player_1.weapon_name == "Dorm-Room Clanker", "Heavy rifle pickup uses campus parody naming")
+	_assert_true(player_1.weapon_name == "Lab-Partner Blaster", "Player 1 starting weapon uses campus parody naming")
+	var player_2: Player = game.get_node("%Player2")
+	_assert_true(player_2.weapon_name == "Dorm-Room Clanker", "Player 2 starting weapon uses campus parody naming")
 
 	game.queue_free()
-	await process_frame
-
-	var fast_pickup := PICKUP_SCENE.instantiate()
-	fast_pickup.pickup_type = "famas"
-	root.add_child(fast_pickup)
-	await process_frame
-	_assert_true(fast_pickup.get_node("%Label").text == "LB", "Fast rifle pickup label matches its campus parody name")
-	fast_pickup.queue_free()
-	await process_frame
-
-	var heavy_pickup := PICKUP_SCENE.instantiate()
-	heavy_pickup.pickup_type = "ak"
-	root.add_child(heavy_pickup)
-	await process_frame
-	_assert_true(heavy_pickup.get_node("%Label").text == "DC", "Heavy rifle pickup label matches its campus parody name")
-	heavy_pickup.queue_free()
 	await process_frame
 
 	var menu_text := FileAccess.get_file_as_string("res://scenes/MainMenu.tscn")
@@ -630,7 +458,7 @@ func _test_public_facing_names_are_campus_parody_and_hud_readable() -> void:
 	_assert_true(not _contains_any(readme_text, ["FAMAS", " AK", "Red Bull", "Honda"]), "README avoids real-world brand and weapon references")
 
 	var pass_text := FileAccess.get_file_as_string("res://docs/readability-and-naming-pass.md")
-	_assert_true(pass_text.contains("Player, bullet, pickup, ultimate, hazard, platform, and background readability reviewed"), "Readability pass records the cross-arena review")
+	_assert_true(pass_text.contains("Player, bullet, pickup, ultimate, hazard, platform, and background readability reviewed"), "Readability pass records the main arena review")
 	_assert_true(pass_text.contains("No follow-up issues required"), "Readability pass records follow-up issue decision")
 
 

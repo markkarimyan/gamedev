@@ -164,21 +164,21 @@ position = Vector2(700, 448)
 [node name="Pickups" type="Node2D" parent="."]
 z_index = 5
 
-[node name="FamasPickup" parent="Pickups" instance=ExtResource("2_pickup")]
-position = Vector2(275, 297)
-pickup_type = "famas"
-
-[node name="AkPickup" parent="Pickups" instance=ExtResource("2_pickup")]
-position = Vector2(685, 297)
-pickup_type = "ak"
+[node name="RapidPickup" parent="Pickups" instance=ExtResource("2_pickup")]
+position = Vector2(340, 297)
+pickup_type = "rapid"
 
 [node name="JumpPickup" parent="Pickups" instance=ExtResource("2_pickup")]
 position = Vector2(480, 438)
 pickup_type = "jump_boost"
 
-[node name="CramNotesPickup" parent="Pickups" instance=ExtResource("2_pickup")]
-position = Vector2(480, 297)
-pickup_type = "cram_notes"
+[node name="MedkitPickup" parent="Pickups" instance=ExtResource("2_pickup")]
+position = Vector2(620, 297)
+pickup_type = "medkit"
+
+[node name="DamageBoostPickup" parent="Pickups" instance=ExtResource("2_pickup")]
+position = Vector2(480, 190)
+pickup_type = "damage_boost"
 
 [node name="FutureGimmick" type="Node2D" parent="."]
 

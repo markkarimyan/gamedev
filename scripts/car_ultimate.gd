@@ -13,13 +13,15 @@ var has_hit := false
 var car_parts: Array[CanvasItem] = []
 
 @onready var warning: ColorRect = %Warning
+@onready var car_sprite: Sprite2D = %CarSprite
 
 func _ready() -> void:
 	add_to_group("car_ultimate")
 	add_to_group("player_%d_car_ultimate" % owner_id)
 	for child in get_children():
 		if child is CanvasItem and child != warning:
-			car_parts.append(child)
+			child.visible = false
+	car_parts.append(car_sprite)
 	body_entered.connect(_on_body_entered)
 	scale.x = direction
 	_set_warning_visible(true)

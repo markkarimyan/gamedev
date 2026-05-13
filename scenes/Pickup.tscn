@@ -38,6 +38,13 @@ unique_name_in_owner = true
 polygon = PackedVector2Array(-10, -2, 8, -2, 13, 2, -6, 2, -6, 7, -10, 7)
 color = Color(1, 1, 1, 1)
 
+[node name="IconTexture" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+scale = Vector2(0.11, 0.11)
+
+[node name="IconParts" type="Node2D" parent="."]
+unique_name_in_owner = true
+
 [node name="Label" type="Label" parent="."]
 unique_name_in_owner = true
 offset_left = -22.0

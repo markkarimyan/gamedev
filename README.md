@@ -36,7 +36,7 @@ Match controls:
 
 - Main menu
 - One-screen arena
-- Randomized hand-built arenas between rounds
+- Single hand-built main arena
 - Two local players
 - Movement, jumping, gun shooting
 - Double jump
@@ -44,7 +44,7 @@ Match controls:
 - Bullet hit detection
 - Lab-Partner Blaster fast rifle for Player 1
 - Dorm-Room Clanker heavier rifle for Player 2
-- Arena pickups for weapon swaps, rapid fire, medkits, and jump boost
+- Arena pickups for fire rate, damage, medkits, and jump boost
 - Health bars
 - Ultimate charge meters and ready prompts
 - Damage and knockback
@@ -61,7 +61,7 @@ Match controls:
 
 - `scenes/MainMenu.tscn`: title screen and controls info
 - `scenes/Game.tscn`: match scene that composes the arena, players, and HUD
-- `scenes/arenas/*.tscn`: reusable hand-built arenas with backgrounds, gameplay geometry, spawns, pickups, and future gimmick placeholders
+- `scenes/arenas/CampusArena.tscn`: main arena with background, gameplay geometry, spawns, pickups, and a future gimmick placeholder
 - `scenes/Player.tscn`: reusable fighter scene
 - `scenes/HUD.tscn`: health bars, scores, round display
 - `scenes/WinScreen.tscn`: final match winner screen

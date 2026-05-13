@@ -23,8 +23,8 @@ const COFFEE_SPEED_MULTIPLIER := 1.45
 const COFFEE_JUMP_MULTIPLIER := 1.18
 const COFFEE_SHOOT_COOLDOWN_MULTIPLIER := 0.58
 const COFFEE_CRASH_SPEED_MULTIPLIER := 0.62
-const CRAM_NOTES_SECONDS := 5.0
-const CRAM_NOTES_SPEED_MULTIPLIER := 1.28
+const DAMAGE_BOOST_SECONDS := 7.0
+const DAMAGE_BOOST_MULTIPLIER := 1.55
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
 const SPRITE_BASE_POSITION := Vector2(0, -33)
 const MUZZLE_Y := -51.0
@@ -49,7 +49,7 @@ var walk_frame_time := 0.0
 var jump_boost_left := 0.0
 var coffee_overdrive_left := 0.0
 var coffee_crash_left := 0.0
-var cram_notes_left := 0.0
+var damage_boost_left := 0.0
 var weapon_name := ""
 var weapon_damage := 12
 var weapon_cooldown := 0.42
@@ -123,7 +123,7 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	jump_boost_left = 0.0
 	coffee_overdrive_left = 0.0
 	coffee_crash_left = 0.0
-	cram_notes_left = 0.0
+	damage_boost_left = 0.0
 	_set_muzzle_fire_visible(false)
 	full_sprite.position = SPRITE_BASE_POSITION
 	full_sprite.rotation = 0.0
@@ -168,8 +168,8 @@ func is_coffee_crashing() -> bool:
 	return coffee_crash_left > 0.0
 
 
-func has_cram_notes() -> bool:
-	return cram_notes_left > 0.0
+func has_damage_boost() -> bool:
+	return damage_boost_left > 0.0
 
 
 func current_movement_speed() -> float:
@@ -177,8 +177,6 @@ func current_movement_speed() -> float:
 		return SPEED * COFFEE_SPEED_MULTIPLIER
 	if is_coffee_crashing():
 		return SPEED * COFFEE_CRASH_SPEED_MULTIPLIER
-	if has_cram_notes():
-		return SPEED * CRAM_NOTES_SPEED_MULTIPLIER
 	return SPEED
 
 
@@ -192,6 +190,12 @@ func current_weapon_cooldown() -> float:
 	if is_coffee_overdrive_active():
 		return weapon_cooldown * COFFEE_SHOOT_COOLDOWN_MULTIPLIER
 	return weapon_cooldown
+
+
+func current_weapon_damage() -> int:
+	if has_damage_boost():
+		return roundi(float(weapon_damage) * DAMAGE_BOOST_MULTIPLIER)
+	return weapon_damage
 
 
 func add_ultimate_charge_for_damage_dealt(damage: int) -> void:
@@ -235,8 +239,8 @@ func _tick_timers(delta: float) -> void:
 			coffee_crash_left = COFFEE_CRASH_SECONDS
 	if coffee_crash_left > 0.0:
 		coffee_crash_left -= delta
-	if cram_notes_left > 0.0:
-		cram_notes_left -= delta
+	if damage_boost_left > 0.0:
+		damage_boost_left -= delta
 	if shot_recoil_left > 0.0:
 		shot_recoil_left -= delta
 		if shot_recoil_left <= 0.0:
@@ -259,7 +263,7 @@ func _shoot() -> void:
 	var bullet := BULLET_SCENE.instantiate()
 	bullet.direction = facing
 	bullet.owner_id = player_id
-	bullet.damage = weapon_damage
+	bullet.damage = current_weapon_damage()
 	bullet.speed = weapon_bullet_speed
 	bullet.bullet_color = weapon_bullet_color
 	bullet.global_position = muzzle.global_position
@@ -324,10 +328,6 @@ func _animate_muzzle_fire() -> void:
 
 func collect_pickup(pickup_type: String) -> void:
 	match pickup_type:
-		"famas":
-			_apply_weapon("Lab-Partner Blaster", 11, 0.26, 690.0, Color(0.2, 0.62, 1.0, 1.0))
-		"ak":
-			_apply_weapon("Dorm-Room Clanker", 17, 0.48, 610.0, Color(1.0, 0.22, 0.16, 1.0))
 		"rapid":
 			weapon_cooldown = maxf(weapon_cooldown * 0.55, 0.16)
 			weapon_bullet_color = Color(1.0, 0.9, 0.15, 1.0)
@@ -338,8 +338,8 @@ func collect_pickup(pickup_type: String) -> void:
 		"medkit":
 			health = mini(health + 25, MAX_HEALTH)
 			health_changed.emit(player_id, health, MAX_HEALTH)
-		"cram_notes":
-			cram_notes_left = CRAM_NOTES_SECONDS
+		"damage_boost":
+			damage_boost_left = DAMAGE_BOOST_SECONDS
 
 
 func _apply_starting_weapon() -> void:
