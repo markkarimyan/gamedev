@@ -1,10 +1,10 @@
 extends CanvasLayer
 class_name HUD
 
-@onready var p1_health: ProgressBar = %P1Health
-@onready var p2_health: ProgressBar = %P2Health
-@onready var p1_ultimate: ProgressBar = %P1Ultimate
-@onready var p2_ultimate: ProgressBar = %P2Ultimate
+@onready var p1_health: TextureProgressBar = %P1Health
+@onready var p2_health: TextureProgressBar = %P2Health
+@onready var p1_ultimate: TextureProgressBar = %P1Ultimate
+@onready var p2_ultimate: TextureProgressBar = %P2Ultimate
 @onready var p1_ultimate_label: Label = %P1UltimateLabel
 @onready var p2_ultimate_label: Label = %P2UltimateLabel
 @onready var p1_score: Label = %P1Score

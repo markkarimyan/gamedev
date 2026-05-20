@@ -21,12 +21,19 @@ config/features=PackedStringArray("4.6")
 [autoload]
 
 GameState="*res://scripts/game_state.gd"
+BackgroundMusic="*res://scripts/background_music.gd"
 
 [display]
 
 window/size/viewport_width=960
 window/size/viewport_height=540
+window/size/window_width_override=1280
+window/size/window_height_override=720
 window/stretch/mode="canvas_items"
+
+[gui]
+
+theme/custom="res://theme/pixel_ui_theme.tres"
 
 [rendering]
 

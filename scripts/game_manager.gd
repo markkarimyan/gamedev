@@ -6,8 +6,21 @@ signal ultimate_cinematic_finished(player_id: int)
 const TARGET_SCORE := 3
 const ULTIMATE_CHARGE_PER_SECOND := 4.0
 const ULTIMATE_CINEMATIC_SECONDS := 0.45
+const COFFEE_ULTIMATE_CINEMATIC_SECONDS := 3
 const CAR_ULTIMATE_SCENE := preload("res://scenes/CarUltimate.tscn")
 const MAIN_ARENA_SCENE := preload("res://scenes/arenas/CampusArena.tscn")
+const PLAYER_1_FACE_TEXTURE := preload("res://assets/player1_face_pixel.png")
+const PLAYER_2_FACE_TEXTURE := preload("res://assets/player2_face_pixel.png")
+const PORTRAIT_BACKGROUND_KEY_SHADER := preload("res://shaders/portrait_background_key.gdshader")
+const PLAYER_1_ULTIMATE_POWER_UP := preload("res://assets/sfx/player1_ultimate_power_up.mp3")
+const PLAYER_2_ULTIMATE_HORN := preload("res://assets/sfx/player2_ultimate_horn.mp3")
+const CINEMATIC_DIM_ALPHA := 0.58
+const FACE_START_SCALE := 0.05
+const FACE_END_SCALE := 0.42
+const FACE_START_ALPHA := 0.62
+const FACE_END_ALPHA := 0.08
+const PLAYER_1_ULTIMATE_POWER_UP_VOLUME_DB := -3.0
+const PLAYER_2_ULTIMATE_HORN_VOLUME_DB := -1.0
 
 var score_1 := 0
 var score_2 := 0
@@ -15,16 +28,28 @@ var round_number := 1
 var round_active := true
 var cinematic_freeze_active := false
 var cinematic_player_id := 0
+var cinematic_overlay_duration := 0.0
+var cinematic_overlay_elapsed := 0.0
 var _frozen_physics_nodes: Array[Node] = []
+var face_material: ShaderMaterial
+var player_1_ultimate_power_up: AudioStreamPlayer
+var player_2_ultimate_horn: AudioStreamPlayer
 
 @onready var player_1 = %Player1
 @onready var player_2 = %Player2
 @onready var hud = %HUD
 @onready var arena: Node2D = %Arena
+@onready var cinematic_overlay: CanvasLayer = %CinematicOverlay
+@onready var cinematic_dim: ColorRect = %CinematicDim
+@onready var cinematic_face: Sprite2D = %CinematicFace
 @onready var p1_spawn: Marker2D
 @onready var p2_spawn: Marker2D
+var arena_background: Sprite2D
 
 func _ready() -> void:
+	_apply_selected_level_background()
+	_setup_audio()
+	_setup_cinematic_overlay()
 	_sync_spawn_markers()
 	player_1.health_changed.connect(_on_player_health_changed)
 	player_2.health_changed.connect(_on_player_health_changed)
@@ -38,6 +63,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_cinematic_overlay(delta)
 	if not round_active or cinematic_freeze_active:
 		return
 	player_1.add_ultimate_charge(ULTIMATE_CHARGE_PER_SECOND * delta)
@@ -83,6 +109,15 @@ func _reload_main_arena() -> void:
 	arena.owner = self
 	arena.unique_name_in_owner = true
 	move_child(arena, 0)
+	_apply_selected_level_background()
+
+
+func _apply_selected_level_background() -> void:
+	arena_background = arena.get_node("Background/ArenaBackground")
+	var level: Dictionary = get_node("/root/GameState").get_selected_level()
+	var background_texture := load(str(level["background_path"]))
+	if background_texture is Texture2D:
+		arena_background.texture = background_texture
 
 
 func _sync_spawn_markers() -> void:
@@ -132,6 +167,9 @@ func start_ultimate_cinematic(player_id: int, duration := ULTIMATE_CINEMATIC_SEC
 
 	cinematic_player_id = player_id
 	_set_match_cinematic_frozen(true)
+	if player_id == 1:
+		player_1.play_coffee_ultimate_animation()
+	_start_cinematic_overlay(player_id, duration)
 	ultimate_cinematic_started.emit(player_id)
 	get_tree().create_timer(duration).timeout.connect(_finish_ultimate_cinematic.bind(player_id))
 	return true
@@ -148,7 +186,40 @@ func _finish_ultimate_cinematic(player_id: int) -> void:
 
 
 func _on_player_ultimate_activated(player_id: int) -> void:
-	start_ultimate_cinematic(player_id)
+	if player_id == 1:
+		if start_ultimate_cinematic(player_id, COFFEE_ULTIMATE_CINEMATIC_SECONDS):
+			_play_player_1_ultimate_power_up()
+	else:
+		if start_ultimate_cinematic(player_id):
+			_play_player_2_ultimate_horn()
+
+
+func _setup_audio() -> void:
+	player_1_ultimate_power_up = AudioStreamPlayer.new()
+	player_1_ultimate_power_up.name = "Player1UltimatePowerUp"
+	player_1_ultimate_power_up.stream = PLAYER_1_ULTIMATE_POWER_UP
+	player_1_ultimate_power_up.volume_db = PLAYER_1_ULTIMATE_POWER_UP_VOLUME_DB
+	if player_1_ultimate_power_up.stream is AudioStreamMP3:
+		player_1_ultimate_power_up.stream.loop = false
+	add_child(player_1_ultimate_power_up)
+
+	player_2_ultimate_horn = AudioStreamPlayer.new()
+	player_2_ultimate_horn.name = "Player2UltimateHorn"
+	player_2_ultimate_horn.stream = PLAYER_2_ULTIMATE_HORN
+	player_2_ultimate_horn.volume_db = PLAYER_2_ULTIMATE_HORN_VOLUME_DB
+	if player_2_ultimate_horn.stream is AudioStreamMP3:
+		player_2_ultimate_horn.stream.loop = false
+	add_child(player_2_ultimate_horn)
+
+
+func _play_player_1_ultimate_power_up() -> void:
+	player_1_ultimate_power_up.stop()
+	player_1_ultimate_power_up.play()
+
+
+func _play_player_2_ultimate_horn() -> void:
+	player_2_ultimate_horn.stop()
+	player_2_ultimate_horn.play()
 
 
 func _spawn_car_ultimate(player: Player) -> void:
@@ -180,6 +251,53 @@ func _set_match_cinematic_frozen(is_frozen: bool) -> void:
 	else:
 		_restore_gameplay_nodes()
 		cinematic_player_id = 0
+		if cinematic_overlay_elapsed >= cinematic_overlay_duration:
+			_hide_cinematic_overlay()
+
+
+func _setup_cinematic_overlay() -> void:
+	cinematic_overlay.visible = false
+	cinematic_dim.color = Color(0.0, 0.0, 0.0, 0.0)
+	cinematic_face.centered = true
+	cinematic_face.visible = false
+	cinematic_face.modulate = Color.WHITE
+	face_material = ShaderMaterial.new()
+	face_material.shader = PORTRAIT_BACKGROUND_KEY_SHADER
+	face_material.set_shader_parameter("max_alpha", FACE_START_ALPHA)
+	cinematic_face.material = face_material
+
+
+func _start_cinematic_overlay(player_id: int, duration: float) -> void:
+	cinematic_overlay_duration = maxf(duration, 0.01)
+	cinematic_overlay_elapsed = 0.0
+	cinematic_overlay.visible = true
+	cinematic_face.visible = true
+	cinematic_face.texture = PLAYER_1_FACE_TEXTURE if player_id == 1 else PLAYER_2_FACE_TEXTURE
+	cinematic_face.position = get_viewport_rect().size * 0.5
+	cinematic_face.scale = Vector2.ONE * FACE_START_SCALE
+	cinematic_face.modulate = Color.WHITE
+	face_material.set_shader_parameter("max_alpha", FACE_START_ALPHA)
+	cinematic_dim.color = Color(0.0, 0.0, 0.0, CINEMATIC_DIM_ALPHA)
+
+
+func _update_cinematic_overlay(delta: float) -> void:
+	if not cinematic_overlay.visible:
+		return
+	cinematic_overlay_elapsed += delta
+	var progress := clampf(cinematic_overlay_elapsed / cinematic_overlay_duration, 0.0, 1.0)
+	var eased_progress := 1.0 - pow(1.0 - progress, 2.0)
+	cinematic_face.position = get_viewport_rect().size * 0.5
+	cinematic_face.scale = Vector2.ONE * lerpf(FACE_START_SCALE, FACE_END_SCALE, eased_progress)
+	face_material.set_shader_parameter("max_alpha", lerpf(FACE_START_ALPHA, FACE_END_ALPHA, eased_progress))
+	cinematic_dim.color = Color(0.0, 0.0, 0.0, CINEMATIC_DIM_ALPHA * (1.0 - progress * 0.35))
+	if progress >= 1.0 and not cinematic_freeze_active:
+		_hide_cinematic_overlay()
+
+
+func _hide_cinematic_overlay() -> void:
+	cinematic_overlay.visible = false
+	cinematic_face.visible = false
+	cinematic_dim.color = Color(0.0, 0.0, 0.0, 0.0)
 
 
 func _freeze_gameplay_nodes() -> void:

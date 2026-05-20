@@ -39,7 +39,7 @@ alignment = 1
 [node name="WinnerLabel" type="Label" parent="Wrap"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 44
+theme_override_font_sizes/font_size = 24
 text = "Player Wins!"
 horizontal_alignment = 1
 

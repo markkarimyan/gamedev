@@ -27,9 +27,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -250.0
+offset_left = -330.0
 offset_top = -190.0
-offset_right = 250.0
+offset_right = 330.0
 offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -38,21 +38,33 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Wrap"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 28
 text = "Pixel Duel Arena"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Wrap"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 12
 text = "Local 2-player arena fighter"
 horizontal_alignment = 1
 
 [node name="Controls" type="Label" parent="Wrap"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 8
 text = "P1: A/D move, W double jump, F shoot, G Coffee Rush\nP2: Arrows move, Up double jump, Right Ctrl or Numpad 0 shoot, Right Shift Shuttle Sweep\nPickups: fire rate, jump boost, medkit, damage boost"
 horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="Wrap"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Level"
+horizontal_alignment = 1
+
+[node name="LevelSelect" type="OptionButton" parent="Wrap"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+selected = 0
 
 [node name="StartButton" type="Button" parent="Wrap"]
 unique_name_in_owner = true
@@ -65,5 +77,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 44)
 text = "Quit"
 
+[connection signal="item_selected" from="Wrap/LevelSelect" to="." method="_on_level_select_item_selected"]
 [connection signal="pressed" from="Wrap/StartButton" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="Wrap/QuitButton" to="." method="_on_quit_button_pressed"]

@@ -17,7 +17,7 @@ const SHOT_RECOIL_TIME := 0.12
 const INVULNERABLE_TIME := 0.45
 const KNOCKBACK_CONTROL_LOCK_TIME := 0.18
 const KNOCKBACK_FORCE := Vector2(330.0, -170.0)
-const COFFEE_OVERDRIVE_SECONDS := 2.2
+const COFFEE_OVERDRIVE_SECONDS := 7
 const COFFEE_CRASH_SECONDS := 0.85
 const COFFEE_SPEED_MULTIPLIER := 1.45
 const COFFEE_JUMP_MULTIPLIER := 1.18
@@ -26,8 +26,22 @@ const COFFEE_CRASH_SPEED_MULTIPLIER := 0.62
 const DAMAGE_BOOST_SECONDS := 7.0
 const DAMAGE_BOOST_MULTIPLIER := 1.55
 const BULLET_SCENE := preload("res://scenes/Bullet.tscn")
+const PISTOL_SHOT_SOUND := preload("res://assets/sfx/pistol_shot.mp3")
+const COFFEE_DRINK_SOUND := preload("res://assets/sfx/coffee_drink.mp3")
+const COFFEE_ULTIMATE_TEXTURE := preload("res://assets/ultimates/rebull.png")
+const COFFEE_ULTIMATE_WALK_TEXTURE := preload("res://assets/ultimates/ult_walk.png")
 const SPRITE_BASE_POSITION := Vector2(0, -33)
 const MUZZLE_Y := -51.0
+const DEFAULT_WALK_FRAMES := 4
+const COFFEE_ULTIMATE_FRAMES := 8
+const COFFEE_ULTIMATE_WALK_FRAMES := 4
+const COFFEE_ULTIMATE_POSE_SECONDS := 2
+const DEFAULT_SPRITE_SCALE := Vector2(0.20, 0.20)
+const COFFEE_ULTIMATE_SPRITE_SCALE := Vector2(0.35, 0.35)
+const COFFEE_ULTIMATE_WALK_SPRITE_SCALE := Vector2(0.20, 0.20)
+const PISTOL_SHOT_VOLUME_DB := -2.0
+const COFFEE_DRINK_VOLUME_DB := 10.0
+const COFFEE_DRINK_DELAY_SECONDS := 0.35
 
 @export var player_id := 1
 @export var body_color := Color("3aa7ff")
@@ -50,6 +64,8 @@ var jump_boost_left := 0.0
 var coffee_overdrive_left := 0.0
 var coffee_crash_left := 0.0
 var damage_boost_left := 0.0
+var coffee_ultimate_pose_left := 0.0
+var default_sprite_texture: Texture2D
 var weapon_name := ""
 var weapon_damage := 12
 var weapon_cooldown := 0.42
@@ -57,6 +73,8 @@ var weapon_bullet_speed := 560.0
 var weapon_bullet_color := Color(1.0, 0.84, 0.22, 1.0)
 var previous_jump_pressed := false
 var previous_shoot_pressed := false
+var pistol_shot_player: AudioStreamPlayer
+var coffee_drink_player: AudioStreamPlayer
 
 @onready var full_sprite: Sprite2D = %FullSprite
 @onready var muzzle: Marker2D = %Muzzle
@@ -67,10 +85,13 @@ var previous_shoot_pressed := false
 
 func _ready() -> void:
 	add_to_group("cinematic_freeze_pauses")
+	_setup_audio()
 	facing = start_facing
+	default_sprite_texture = sprite_texture
 	if sprite_texture != null:
 		full_sprite.texture = sprite_texture
-	full_sprite.hframes = 4
+	full_sprite.hframes = DEFAULT_WALK_FRAMES
+	full_sprite.scale = DEFAULT_SPRITE_SCALE
 	full_sprite.frame = 0
 	_apply_starting_weapon()
 	_update_facing()
@@ -104,6 +125,15 @@ func _physics_process(delta: float) -> void:
 	previous_shoot_pressed = _shoot_pressed()
 
 
+func _process(delta: float) -> void:
+	if coffee_ultimate_pose_left > 0.0:
+		coffee_ultimate_pose_left -= delta
+		_animate_coffee_ultimate(delta)
+		if coffee_ultimate_pose_left <= 0.0:
+			if not is_coffee_overdrive_active():
+				_restore_default_sprite_texture()
+
+
 func reset_for_round(spawn_position: Vector2) -> void:
 	global_position = spawn_position
 	start_position = spawn_position
@@ -123,8 +153,10 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	jump_boost_left = 0.0
 	coffee_overdrive_left = 0.0
 	coffee_crash_left = 0.0
+	coffee_ultimate_pose_left = 0.0
 	damage_boost_left = 0.0
 	_set_muzzle_fire_visible(false)
+	_restore_default_sprite_texture()
 	full_sprite.position = SPRITE_BASE_POSITION
 	full_sprite.rotation = 0.0
 	full_sprite.frame = 0
@@ -156,12 +188,29 @@ func try_activate_ultimate() -> bool:
 
 
 func start_coffee_overdrive() -> void:
+	coffee_ultimate_pose_left = 0.0
 	coffee_overdrive_left = COFFEE_OVERDRIVE_SECONDS
 	coffee_crash_left = 0.0
+	_set_sprite_texture(COFFEE_ULTIMATE_WALK_TEXTURE, COFFEE_ULTIMATE_WALK_FRAMES)
+	full_sprite.scale = COFFEE_ULTIMATE_WALK_SPRITE_SCALE
+	full_sprite.frame = 0
 
 
 func is_coffee_overdrive_active() -> bool:
 	return coffee_overdrive_left > 0.0
+
+
+func play_coffee_ultimate_animation() -> void:
+	if player_id != 1:
+		return
+	_play_coffee_drink_after_delay()
+	coffee_ultimate_pose_left = COFFEE_ULTIMATE_POSE_SECONDS
+	_set_sprite_texture(COFFEE_ULTIMATE_TEXTURE, COFFEE_ULTIMATE_FRAMES)
+	full_sprite.scale = COFFEE_ULTIMATE_SPRITE_SCALE
+	full_sprite.frame = 0
+	full_sprite.position = SPRITE_BASE_POSITION
+	full_sprite.rotation = 0.0
+	_animate_coffee_ultimate(0.0)
 
 
 func is_coffee_crashing() -> bool:
@@ -237,6 +286,7 @@ func _tick_timers(delta: float) -> void:
 		coffee_overdrive_left -= delta
 		if coffee_overdrive_left <= 0.0:
 			coffee_crash_left = COFFEE_CRASH_SECONDS
+			_restore_default_sprite_texture()
 	if coffee_crash_left > 0.0:
 		coffee_crash_left -= delta
 	if damage_boost_left > 0.0:
@@ -271,6 +321,39 @@ func _shoot() -> void:
 	shot_recoil_left = SHOT_RECOIL_TIME
 	_set_muzzle_fire_visible(true)
 	_animate_muzzle_fire()
+	_play_pistol_shot()
+
+
+func _setup_audio() -> void:
+	pistol_shot_player = AudioStreamPlayer.new()
+	pistol_shot_player.name = "PistolShotPlayer"
+	pistol_shot_player.stream = PISTOL_SHOT_SOUND
+	pistol_shot_player.volume_db = PISTOL_SHOT_VOLUME_DB
+	if pistol_shot_player.stream is AudioStreamMP3:
+		pistol_shot_player.stream.loop = false
+	add_child(pistol_shot_player)
+
+	coffee_drink_player = AudioStreamPlayer.new()
+	coffee_drink_player.name = "CoffeeDrinkPlayer"
+	coffee_drink_player.stream = COFFEE_DRINK_SOUND
+	coffee_drink_player.volume_db = COFFEE_DRINK_VOLUME_DB
+	if coffee_drink_player.stream is AudioStreamMP3:
+		coffee_drink_player.stream.loop = false
+	add_child(coffee_drink_player)
+
+
+func _play_pistol_shot() -> void:
+	pistol_shot_player.stop()
+	pistol_shot_player.play()
+
+
+func _play_coffee_drink() -> void:
+	coffee_drink_player.stop()
+	coffee_drink_player.play()
+
+
+func _play_coffee_drink_after_delay() -> void:
+	get_tree().create_timer(COFFEE_DRINK_DELAY_SECONDS).timeout.connect(_play_coffee_drink)
 
 
 func _update_facing() -> void:
@@ -288,9 +371,27 @@ func _update_facing() -> void:
 
 func _animate_sprite(delta: float, direction: float) -> void:
 	var base_position := SPRITE_BASE_POSITION
-	if controls_enabled and abs(direction) > 0.0 and is_on_floor():
+	if coffee_ultimate_pose_left > 0.0:
+		full_sprite.position = base_position
+		full_sprite.rotation = 0.0
+	elif is_coffee_overdrive_active():
+		if abs(direction) > 0.0 and is_on_floor():
+			walk_frame_time += delta
+			full_sprite.frame = int(walk_frame_time * 12.0) % COFFEE_ULTIMATE_WALK_FRAMES
+			full_sprite.position = base_position
+			full_sprite.rotation = 0.0
+		elif not is_on_floor():
+			full_sprite.frame = 1
+			full_sprite.position = base_position + Vector2(0, -2)
+			full_sprite.rotation = deg_to_rad(-3.0 * facing)
+		else:
+			walk_frame_time = 0.0
+			full_sprite.frame = 0
+			full_sprite.position = full_sprite.position.lerp(base_position, 12.0 * delta)
+			full_sprite.rotation = lerp(full_sprite.rotation, 0.0, 12.0 * delta)
+	elif controls_enabled and abs(direction) > 0.0 and is_on_floor():
 		walk_frame_time += delta
-		full_sprite.frame = int(walk_frame_time * 10.0) % 4
+		full_sprite.frame = int(walk_frame_time * 10.0) % DEFAULT_WALK_FRAMES
 		full_sprite.position = base_position
 		full_sprite.rotation = 0.0
 	elif not is_on_floor():
@@ -307,6 +408,28 @@ func _animate_sprite(delta: float, direction: float) -> void:
 		var recoil := shot_recoil_left / SHOT_RECOIL_TIME
 		full_sprite.position.x -= facing * 6.0 * recoil
 		full_sprite.rotation -= deg_to_rad(facing * 5.0 * recoil)
+
+
+func _animate_coffee_ultimate(_delta: float) -> void:
+	var progress := 1.0 - maxf(coffee_ultimate_pose_left, 0.0) / COFFEE_ULTIMATE_POSE_SECONDS
+	full_sprite.frame = mini(int(progress * COFFEE_ULTIMATE_FRAMES), COFFEE_ULTIMATE_FRAMES - 1)
+	full_sprite.position = SPRITE_BASE_POSITION
+	full_sprite.rotation = 0.0
+
+
+func _set_sprite_texture(texture: Texture2D, frame_count: int) -> void:
+	if full_sprite.texture == texture and full_sprite.hframes == frame_count:
+		return
+	full_sprite.texture = texture
+	full_sprite.hframes = frame_count
+	full_sprite.frame = mini(full_sprite.frame, frame_count - 1)
+
+
+func _restore_default_sprite_texture() -> void:
+	if default_sprite_texture == null:
+		return
+	_set_sprite_texture(default_sprite_texture, DEFAULT_WALK_FRAMES)
+	full_sprite.scale = DEFAULT_SPRITE_SCALE
 
 
 func _set_muzzle_fire_visible(is_visible: bool) -> void:

@@ -31,3 +31,21 @@ start_facing = -1
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
 unique_name_in_owner = true
+
+[node name="CinematicOverlay" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+layer = 20
+
+[node name="CinematicDim" type="ColorRect" parent="CinematicOverlay"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="CinematicFace" type="Sprite2D" parent="CinematicOverlay"]
+unique_name_in_owner = true
+position = Vector2(480, 270)

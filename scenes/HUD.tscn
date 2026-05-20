@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://pixel_duel_hud"]
+[gd_scene load_steps=6 format=3 uid="uid://pixel_duel_hud"]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/health_frame.png" id="2_health_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/health_fill.png" id="3_health_fill"]
+[ext_resource type="Texture2D" path="res://assets/ui/ultimate_frame.png" id="4_ultimate_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/ultimate_fill.png" id="5_ultimate_fill"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud_script")
@@ -19,40 +23,55 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 18.0
+offset_top = 12.0
 offset_right = -24.0
-offset_bottom = 76.0
+offset_bottom = 66.0
 grow_horizontal = 2
 theme_override_constants/separation = 18
 
 [node name="P1Panel" type="VBoxContainer" parent="Root/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 1
 
 [node name="P1Score" type="Label" parent="Root/TopBar/P1Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 10
 text = "P1: 0/3"
 
-[node name="P1Health" type="ProgressBar" parent="Root/TopBar/P1Panel"]
+[node name="P1Health" type="TextureProgressBar" parent="Root/TopBar/P1Panel"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 35)
 max_value = 100.0
 value = 100.0
-show_percentage = false
+nine_patch_stretch = true
+stretch_margin_left = 48
+stretch_margin_top = 4
+stretch_margin_right = 48
+stretch_margin_bottom = 4
+texture_under = ExtResource("2_health_frame")
+texture_progress = ExtResource("3_health_fill")
 
 [node name="P1UltimateLabel" type="Label" parent="Root/TopBar/P1Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 8
 text = "Coffee Rush 0%"
 
-[node name="P1Ultimate" type="ProgressBar" parent="Root/TopBar/P1Panel"]
+[node name="P1Ultimate" type="TextureProgressBar" parent="Root/TopBar/P1Panel"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 25)
 max_value = 100.0
-show_percentage = false
+nine_patch_stretch = true
+stretch_margin_left = 48
+stretch_margin_top = 3
+stretch_margin_right = 48
+stretch_margin_bottom = 3
+texture_under = ExtResource("4_ultimate_frame")
+texture_progress = ExtResource("5_ultimate_fill")
 
 [node name="CenterPanel" type="VBoxContainer" parent="Root/TopBar"]
 layout_mode = 2
@@ -63,45 +82,60 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 14
 text = "Round 1"
 
 [node name="HintLabel" type="Label" parent="Root/TopBar/CenterPanel"]
 layout_mode = 2
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 8
 text = "G / RShift ult | R restart | Esc menu"
 
 [node name="P2Panel" type="VBoxContainer" parent="Root/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 1
 
 [node name="P2Score" type="Label" parent="Root/TopBar/P2Panel"]
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 10
 text = "P2: 0/3"
 
-[node name="P2Health" type="ProgressBar" parent="Root/TopBar/P2Panel"]
+[node name="P2Health" type="TextureProgressBar" parent="Root/TopBar/P2Panel"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 35)
 max_value = 100.0
 value = 100.0
-show_percentage = false
+nine_patch_stretch = true
+stretch_margin_left = 48
+stretch_margin_top = 4
+stretch_margin_right = 48
+stretch_margin_bottom = 4
+texture_under = ExtResource("2_health_frame")
+texture_progress = ExtResource("3_health_fill")
 
 [node name="P2UltimateLabel" type="Label" parent="Root/TopBar/P2Panel"]
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 8
 text = "Shuttle Sweep 0%"
 
-[node name="P2Ultimate" type="ProgressBar" parent="Root/TopBar/P2Panel"]
+[node name="P2Ultimate" type="TextureProgressBar" parent="Root/TopBar/P2Panel"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 25)
 max_value = 100.0
-show_percentage = false
+nine_patch_stretch = true
+stretch_margin_left = 48
+stretch_margin_top = 3
+stretch_margin_right = 48
+stretch_margin_bottom = 3
+texture_under = ExtResource("4_ultimate_frame")
+texture_progress = ExtResource("5_ultimate_fill")
 
 [node name="MessageLabel" type="Label" parent="Root"]
 unique_name_in_owner = true
@@ -117,7 +151,7 @@ offset_right = 260.0
 offset_bottom = 52.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 18
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
