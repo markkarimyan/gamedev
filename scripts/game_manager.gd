@@ -5,7 +5,7 @@ signal ultimate_cinematic_finished(player_id: int)
 
 const TARGET_SCORE := 3
 const ULTIMATE_CHARGE_PER_SECOND := 4.0
-const ULTIMATE_CINEMATIC_SECONDS := 0.45
+const ULTIMATE_CINEMATIC_SECONDS := 2.0
 const COFFEE_ULTIMATE_CINEMATIC_SECONDS := 3
 const CAR_ULTIMATE_SCENE := preload("res://scenes/CarUltimate.tscn")
 const MAIN_ARENA_SCENE := preload("res://scenes/arenas/CampusArena.tscn")
@@ -17,7 +17,7 @@ const PLAYER_2_ULTIMATE_HORN := preload("res://assets/sfx/player2_ultimate_horn.
 const CINEMATIC_DIM_ALPHA := 0.58
 const FACE_START_SCALE := 0.05
 const FACE_END_SCALE := 0.42
-const FACE_START_ALPHA := 0.62
+const FACE_START_ALPHA := 0.80
 const FACE_END_ALPHA := 0.08
 const PLAYER_1_ULTIMATE_POWER_UP_VOLUME_DB := -3.0
 const PLAYER_2_ULTIMATE_HORN_VOLUME_DB := -1.0
